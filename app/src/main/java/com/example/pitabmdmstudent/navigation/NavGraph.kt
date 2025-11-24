@@ -7,7 +7,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.pitabmdmstudent.ui.screens.DashboardScreen
+import com.example.pitabmdmstudent.ui.screens.PermissionScreen
 import com.example.pitabmdmstudent.ui.screens.SplashScreen
+import okhttp3.Route
 
 @Composable
 fun NavGraph(navController: NavHostController) {
@@ -18,7 +20,10 @@ fun NavGraph(navController: NavHostController) {
         composable(Routes.Splash.route) {
             SplashScreen(navController = navController)
         }
-        composable(Routes.Home.route) {
+        composable(Routes.Permission.route) {
+            PermissionScreen(navController = navController)
+        }
+        composable(Routes.Dashboard.route) {
             DashboardScreen(navController = navController)
         }
     }
