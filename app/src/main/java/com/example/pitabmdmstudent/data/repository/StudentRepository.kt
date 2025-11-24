@@ -22,7 +22,6 @@ class StudentRepository @Inject constructor(
 
     suspend fun uploadInstalledApps(apps: List<AppInfoRequest>): Boolean {
         val response = studentDataSource.uploadAppList(apps)
-
         return response.isSuccessful
     }
 }

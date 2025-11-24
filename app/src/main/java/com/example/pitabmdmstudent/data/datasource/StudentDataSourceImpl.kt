@@ -14,11 +14,11 @@ class StudentDataSourceImpl @Inject constructor(
     override suspend fun getPairingCode(): Response<ApiResponse<String>> =
         api.getPairingCode()
 
-    override suspend fun postAppUsageStats(request: AppUsageStatsRequest): Response<ApiResponse<List<Any>>> {
-        return api.postAppUsageStats(request)
-    }
-
     override suspend fun uploadAppList(request: List<AppInfoRequest>): Response<ApiResponse<Unit>> {
         return api.uploadAppList(request)
+    }
+
+    override suspend fun postAppUsageStats(request: AppUsageStatsRequest): Response<ApiResponse<List<Any>>> {
+        return api.postAppUsageStats(request)
     }
 }

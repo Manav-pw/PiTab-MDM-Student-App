@@ -10,7 +10,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 
 interface StudentApi {
-    @GET("mdm/device-pairing/generate")
+    @GET("${BuildConfig.PARENT_BASE_URL}mdm/device-pairing/generate")
     suspend fun getPairingCode(): Response<ApiResponse<String>>
 
     @POST("${BuildConfig.PARENT_BASE_URL}/mdm/generic-app-management/app-block-rule/set-installed-apps")

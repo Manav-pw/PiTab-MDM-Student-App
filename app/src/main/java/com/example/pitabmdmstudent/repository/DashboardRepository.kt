@@ -82,8 +82,6 @@ class DashboardRepository @Inject constructor(
             AppUsage(appName, minutes)
         }.sortedByDescending { it.usageMinutes }
 
-        Log.d("Test123", "In dashboard Repo $apps")
-
         _usageFlow.value = apps
     }
 }

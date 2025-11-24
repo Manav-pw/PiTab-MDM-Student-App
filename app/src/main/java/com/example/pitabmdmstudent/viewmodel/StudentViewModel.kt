@@ -1,6 +1,7 @@
 package com.example.pitabmdmstudent.viewmodel
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.repository.StudentRepository
@@ -36,6 +37,7 @@ class StudentViewModel @Inject constructor(
         viewModelScope.launch {
             val installed = AppUtils.getInstalledApps(context)
             val result = repository.uploadInstalledApps(installed)
+            Log.d("StudentViewModel", "uploadInstalledApps: $result")
             _uploadStatus.value = result
         }
     }

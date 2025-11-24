@@ -1,5 +1,6 @@
 package com.example.pitabmdmstudent.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,7 +36,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.pitabmdmstudent.navigation.Routes
 import com.example.pitabmdmstudent.viewmodel.ScanQRViewModel
 
 @Composable
@@ -48,7 +47,7 @@ fun ScanQRScreen(
     val qrBitmap by qrVm.qrBitmap.collectAsState()
 
     LaunchedEffect(pairingCode) {
-        if(pairingCode!=null){
+        if (pairingCode != null) {
             qrVm.setCode(pairingCode)
         }
     }
@@ -56,7 +55,7 @@ fun ScanQRScreen(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // Top Gradient Block
+        // Gradient Block
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -71,7 +70,6 @@ fun ScanQRScreen(
                 )
         )
 
-        // Bottom Grey Block
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -80,7 +78,6 @@ fun ScanQRScreen(
                 .background(Color(0xFF0F172A))
         )
 
-        // Top Bar
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -95,7 +92,6 @@ fun ScanQRScreen(
             }
         }
 
-        // Center Content
         Column(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -111,7 +107,6 @@ fun ScanQRScreen(
                 modifier = Modifier.padding(bottom = 20.dp)
             )
 
-            // White Card
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

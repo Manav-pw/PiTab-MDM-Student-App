@@ -16,6 +16,7 @@ import com.example.pitabmdmstudent.ui.screens.SplashScreen
 import com.example.pitabmdmstudent.viewmodel.ScanQRViewModel
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+import java.util.Base64
 
 @Composable
 fun NavGraph() {
@@ -33,10 +34,9 @@ fun NavGraph() {
             DashboardScreen(navController = navController)
         }
         composable(Routes.ScanQR.route) {
-            val code = it
-                .arguments
+            val code = it.arguments
                 ?.getString("pairing_code")
-                ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8.toString()) }
+                ?.let { String(Base64.getUrlDecoder().decode(it)) }
             ScanQRScreen(navController = navController, pairingCode = code)
         }
     }

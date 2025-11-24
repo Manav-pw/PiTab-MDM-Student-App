@@ -24,9 +24,6 @@ class ScanQRViewModel @Inject constructor() : ViewModel() {
             _qrBitmap.value = generateQrBitmap(code)
         }
     }
-
-    fun onBackClick() {}
-    fun onCloseClick() {}
 }
 
 fun generateQrBitmap(text: String, size: Int = 600): Bitmap {

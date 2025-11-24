@@ -6,7 +6,6 @@ import okhttp3.Response
 import java.util.Properties
 
 class AuthInterceptor : Interceptor {
-
     val token: String = BuildConfig.PARENT_BEARER_TOKEN
     override fun intercept(chain: Interceptor.Chain): Response {
         val request = chain.request()
