@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     id("dagger.hilt.android.plugin")
+    id("kotlin-parcelize")
 }
 
 android {
@@ -20,6 +21,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "PARENT_BASE_URL", "\"https://api.penpencil.co/pi-os-backend/v1/\"")
+        buildConfigField("String", "PARENT_BEARER_TOKEN", "\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjQ0MDA4NzUuNDMzLCJkYXRhIjp7Il9pZCI6IjY4ZjBiNTEwZmRiNWYyYzBiYjFlMWQxNCIsInVzZXJuYW1lIjoiOTk1MzA2NjUyOSIsImZpcnN0TmFtZSI6IiIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjY1OTNiNGE5ZTY3ODI4MDAxODc0MmM0YyIsIndlYnNpdGUiOiJsZWFybm9zLmxpdmUiLCJuYW1lIjoibGVhcm4tb3MifSwicm9sZXMiOlsiNWIyN2JkOTY1ODQyZjk1MGE3NzhjNmVmIl0sImNvdW50cnlHcm91cCI6IklOIiwib25lUm9sZXMiOltdLCJ0eXBlIjoiVVNFUiJ9LCJpYXQiOjE3NjM3OTYwNzV9.yUlpBdR3t5jrqxRuE9tFkpVhgNSKYi8ON_W_hMsdqTU\"")
     }
 
     buildTypes {
@@ -39,6 +43,7 @@ android {
         jvmTarget = "11"
     }
     buildFeatures {
+        buildConfig = true
         compose = true
     }
 }
@@ -52,6 +57,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.hilt.common)
+    implementation(libs.androidx.work.runtime.ktx)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -73,4 +80,11 @@ dependencies {
 
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.material:material-icons-extended")
+
+    implementation ("com.squareup.retrofit2:converter-gson:3.0.0")
+    implementation ("com.squareup.retrofit2:retrofit:3.0.0")
+    implementation("com.google.code.gson:gson:2.11.0")
+
+    // QR code generator
+    implementation("com.google.zxing:core:3.5.4")
 }

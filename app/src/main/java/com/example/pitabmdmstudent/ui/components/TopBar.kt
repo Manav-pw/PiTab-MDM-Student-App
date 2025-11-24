@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun TopBar() {
+fun TopBar(onConnectClick: () -> Unit) {
     var selectedTab by remember { mutableStateOf("Week") }
 
     Row(
@@ -57,7 +57,7 @@ fun TopBar() {
             }
         }
 
-        ConnectButton()
+        ConnectButton(onConnectClick)
     }
 }
 
@@ -79,12 +79,12 @@ fun DashboardToggle(text: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-fun ConnectButton() {
+fun ConnectButton(onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .clip(RoundedCornerShape(16.dp))
             .background(Color(0xFF1E1E2E))
-            .clickable { /* TODO */ }
+            .clickable { onClick() }
             .padding(horizontal = 20.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
