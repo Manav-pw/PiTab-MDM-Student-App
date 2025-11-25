@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.example.pitabmdmstudent.event.AppEventBus
 import com.example.pitabmdmstudent.navigation.NavGraph
 import com.example.pitabmdmstudent.services.SocketService
 import com.example.pitabmdmstudent.ui.theme.PiTabMDMStudentTheme
@@ -31,6 +32,8 @@ class MainActivity : ComponentActivity() {
                 requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1000)
             }
         }
+
+//        AppEventBus.emit(AppEventBus.DeviceEvent.ForegroundAppChanged)
 
         setContent {
             PiTabMDMStudentTheme {

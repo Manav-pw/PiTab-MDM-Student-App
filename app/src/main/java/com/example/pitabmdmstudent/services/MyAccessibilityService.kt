@@ -1,14 +1,16 @@
 package com.example.pitabmdmstudent.services
 
 import android.accessibilityservice.AccessibilityService
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.example.pitabmdmstudent.event.AppEventBus
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MyAccessibilityService : AccessibilityService() {
     companion object {
-        var lastForegroundPackage: String? = null
-        var onEventCallback: ((String) -> Unit)? = null
-
-        var foregroundAppCallback: ((String) -> Unit)? = null
+        var instance: MyAccessibilityService? = null
     }
 
     private val blockedApps = mutableSetOf<String>()
@@ -18,22 +20,26 @@ class MyAccessibilityService : AccessibilityService() {
         blockedApps.addAll(list)
     }
 
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        instance = this
+    }
+
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
 
-        val pkg = event.packageName?.toString() ?: return
-
-        // --- Track foreground app ---
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
-            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
-            lastForegroundPackage = pkg
-            onEventCallback?.invoke(pkg)
+            event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
+            val pkg = event.packageName?.toString() ?: return
+            CoroutineScope(Dispatchers.Default).launch {
+                AppEventBus.emit(AppEventBus.DeviceEvent.ForegroundAppChanged(pkg))
+            }
         }
 
-        // --- Block app logic ---
-        if (blockedApps.contains(pkg)) {
-            performGlobalAction(GLOBAL_ACTION_HOME)
-        }
+//        // --- Block app logic ---
+//        if (blockedApps.contains(pkg)) {
+//            performGlobalAction(GLOBAL_ACTION_HOME)
+//        }
     }
 
     override fun onInterrupt() { }

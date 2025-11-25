@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.repository.StudentRepository
+import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.utils.AppUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,12 +34,19 @@ class StudentViewModel @Inject constructor(
         }
     }
 
-    fun uploadInstalledApps(context: Context) {
+    fun sendDeviceState(request: DeviceStateRequest) {
         viewModelScope.launch {
-            val installed = AppUtils.getInstalledApps(context)
-            val result = repository.uploadInstalledApps(installed)
-            Log.d("StudentViewModel", "uploadInstalledApps: $result")
-            _uploadStatus.value = result
+            val success = repository.updateDeviceState(request)
+            Log.d("DeviceState", "Uploaded = $success")
         }
     }
+
+//    fun uploadInstalledApps(context: Context) {
+//        viewModelScope.launch {
+//            val installed = AppUtils.getInstalledApps(context)
+//            val result = repository.uploadInstalledApps(installed)
+//            Log.d("StudentViewModel", "uploadInstalledApps: $result")
+//            _uploadStatus.value = result
+//        }
+//    }
 }

@@ -24,9 +24,9 @@ class DashboardRepository @Inject constructor(
 
     init {
         // Receive callbacks from AccessibilityService
-        MyAccessibilityService.foregroundAppCallback = { pkg ->
-            updateRealtimeUsage(pkg)
-        }
+//        MyAccessibilityService.foregroundAppCallback = { pkg ->
+//            updateRealtimeUsage(pkg)
+//        }
     }
 
     private var lastPackage = ""

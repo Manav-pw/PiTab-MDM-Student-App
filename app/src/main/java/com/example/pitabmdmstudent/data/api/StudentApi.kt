@@ -4,6 +4,7 @@ import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.data.network.ApiResponse
+import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -16,6 +17,11 @@ interface StudentApi {
     @POST("${BuildConfig.PARENT_BASE_URL}/mdm/generic-app-management/app-block-rule/set-installed-apps")
     suspend fun uploadAppList(
         @Body uploadAppListRequest: List<AppInfoRequest>
+    ): Response<ApiResponse<Unit>>
+
+    @POST("${BuildConfig.PARENT_BASE_URL}/mdm/device-state/update")
+    suspend fun updateDeviceState(
+        @Body deviceState: DeviceStateRequest
     ): Response<ApiResponse<Unit>>
 
     @POST("${BuildConfig.PARENT_BASE_URL}mdm/generic-app-management/device-usage")

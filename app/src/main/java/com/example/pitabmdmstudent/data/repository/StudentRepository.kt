@@ -20,6 +20,11 @@ class StudentRepository @Inject constructor(
         }
     }
 
+    suspend fun updateDeviceState(deviceStateRequest: com.example.pitabmdmstudent.models.request.DeviceStateRequest): Boolean {
+        val response = studentDataSource.updateDeviceState(deviceStateRequest)
+        return response.isSuccessful && (response.body()?.success == true)
+    }
+
     suspend fun uploadInstalledApps(apps: List<AppInfoRequest>): Boolean {
         val response = studentDataSource.uploadAppList(apps)
         return response.isSuccessful
