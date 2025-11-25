@@ -1,4 +1,4 @@
-package com.example.pitabmdmstudent.models.request
+package com.example.pitabmdmstudent.models
 
 data class AppUsageDetails(
     val packageName: String,

@@ -14,6 +14,7 @@ import android.util.Log
 import com.example.pitabmdmstudent.MainActivity
 import com.example.pitabmdmstudent.data.repository.StudentRepository
 import com.example.pitabmdmstudent.event.AppEventBus
+import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.models.request.VisibleApp
 import com.example.pitabmdmstudent.socket.SocketEvent
@@ -73,6 +74,7 @@ class SocketService : Service() {
         // Listen to socket events
         observeSocketEvents()
         observeSystemEvents()
+        startUsageStatsUploader()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -201,5 +203,27 @@ class SocketService : Service() {
         } catch (e: Exception) {
             packageName
         }
+    }
+
+    private fun startUsageStatsUploader() {
+        serviceScope.launch {
+            while (true) {
+                uploadAppUsage()
+                delay(5 * 60 * 1000) // every 5 minutes
+            }
+        }
+    }
+
+    private suspend fun uploadAppUsage() {
+        val appUsageList = AppUtils.getUsageStats(applicationContext)
+
+        if (appUsageList.isEmpty()) {
+            Log.d("postUsageTest", "No usage data available")
+            return
+        }
+
+        val request = AppUsageStatsRequest(appUsageList)
+
+        studentRepository.postAppUsageStats(request)
     }
 }

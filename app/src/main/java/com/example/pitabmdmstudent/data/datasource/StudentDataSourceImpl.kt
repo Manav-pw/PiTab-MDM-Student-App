@@ -23,8 +23,6 @@ class StudentDataSourceImpl @Inject constructor(
         return api.updateDeviceState(deviceStateRequest)
     }
 
-
-
     override suspend fun postAppUsageStats(request: AppUsageStatsRequest): Response<ApiResponse<List<Any>>> {
         return api.postAppUsageStats(request)
     }

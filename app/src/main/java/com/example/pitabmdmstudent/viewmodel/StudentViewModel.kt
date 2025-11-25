@@ -34,19 +34,10 @@ class StudentViewModel @Inject constructor(
         }
     }
 
-    fun sendDeviceState(request: DeviceStateRequest) {
-        viewModelScope.launch {
-            val success = repository.updateDeviceState(request)
-            Log.d("DeviceState", "Uploaded = $success")
-        }
-    }
-
-//    fun uploadInstalledApps(context: Context) {
+//    fun sendDeviceState(request: DeviceStateRequest) {
 //        viewModelScope.launch {
-//            val installed = AppUtils.getInstalledApps(context)
-//            val result = repository.uploadInstalledApps(installed)
-//            Log.d("StudentViewModel", "uploadInstalledApps: $result")
-//            _uploadStatus.value = result
+//            val success = repository.updateDeviceState(request)
+//            Log.d("DeviceState", "Uploaded = $success")
 //        }
 //    }
 }

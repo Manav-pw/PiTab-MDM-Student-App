@@ -24,7 +24,7 @@ interface StudentApi {
         @Body deviceState: DeviceStateRequest
     ): Response<ApiResponse<Unit>>
 
-    @POST("${BuildConfig.PARENT_BASE_URL}mdm/generic-app-management/device-usage")
+    @POST("${BuildConfig.PARENT_BASE_URL}mdm/app-management/device-usage")
     suspend fun postAppUsageStats(
         @Body appUsageStatsRequest: AppUsageStatsRequest
     ): Response<ApiResponse<List<Any>>>
