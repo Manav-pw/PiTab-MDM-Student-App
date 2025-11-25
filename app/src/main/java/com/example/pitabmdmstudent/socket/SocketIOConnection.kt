@@ -24,10 +24,6 @@ import javax.inject.Inject
 
 class SocketIOConnection @Inject constructor(
     private val sharedPrefs: SharedPreferences,
-//    private val scope: CoroutineScope,
-//    private val studentWorkManager: StudentWorkManager,
-//    private val studentUseCase: StudentUseCase,
-//    private val localDatabase: AppRestrictionLocalDatabase,
     @ApplicationContext var context: Context,
 ) : IConnection {
 

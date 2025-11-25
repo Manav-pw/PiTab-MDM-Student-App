@@ -23,6 +23,8 @@ class MyAccessibilityService : AccessibilityService() {
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        Log.d("SocketTest", "Service CREATED")
+        SocketService.start(this)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {

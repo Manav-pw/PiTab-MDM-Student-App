@@ -2,21 +2,37 @@ package com.example.pitabmdmstudent.utils
 
 import android.content.Context
 import android.content.Context.BATTERY_SERVICE
+import android.content.Context.LAUNCHER_APPS_SERVICE
+import android.content.Context.USER_SERVICE
 import android.content.ContextWrapper
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.LauncherActivityInfo
+import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.os.BatteryManager
+import android.os.Build
+import android.os.UserManager
+import android.util.Log
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 
 object AppUtils {
     fun getInstalledApps(context: Context): List<AppInfoRequest> {
-        val packageManager = context.packageManager
-        val packages = packageManager.getInstalledApplications(0)
+        val launcherApps = context.getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
+        val unfilteredList: MutableList<LauncherActivityInfo> = java.util.ArrayList()
 
-        return packages.map {
+        val userManager = context.getSystemService(USER_SERVICE) as UserManager
+        val userHandles = userManager.userProfiles
+
+        for (handle in userHandles) {
+            unfilteredList.addAll(launcherApps.getActivityList(null, handle))
+        }
+
+        return unfilteredList.map {
             AppInfoRequest(
-                appName = it.loadLabel(packageManager).toString(),
-                packageName = it.packageName
+                appName = it.label.toString(),
+                packageName = it.applicationInfo.packageName,
             )
         }
     }

@@ -73,7 +73,6 @@ class SocketService : Service() {
         // Listen to socket events
         observeSocketEvents()
         observeSystemEvents()
-        startIntervalTracking()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -157,18 +156,10 @@ class SocketService : Service() {
                 when (event) {
                     is AppEventBus.DeviceEvent.ForegroundAppChanged -> uploadDeviceState()
                     is AppEventBus.DeviceEvent.ChargingStateChanged -> uploadDeviceState()
+                    // TODO: IMPLEMENT APPSTARTED IF NEEDED
                     is AppEventBus.DeviceEvent.AppStarted -> uploadDeviceState()
                     else -> {}
                 }
-            }
-        }
-    }
-
-    private fun startIntervalTracking() {
-        serviceScope.launch {
-            while (true) {
-                delay(6 * 60 * 1000)
-                uploadDeviceState()
             }
         }
     }

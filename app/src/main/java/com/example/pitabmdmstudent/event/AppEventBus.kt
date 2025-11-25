@@ -15,6 +15,5 @@ object AppEventBus {
         data class ForegroundAppChanged(val packageName: String) : DeviceEvent()
         object ChargingStateChanged : DeviceEvent()
         object AppStarted : DeviceEvent()
-        object IntervalPing : DeviceEvent()
     }
 }

@@ -37,8 +37,6 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             PiTabMDMStudentTheme {
-                Log.d("SocketTest", "Service CREATED")
-                SocketService.start(this)
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
