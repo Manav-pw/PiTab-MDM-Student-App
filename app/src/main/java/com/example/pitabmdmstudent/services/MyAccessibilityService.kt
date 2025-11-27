@@ -1,8 +1,10 @@
 package com.example.pitabmdmstudent.services
 
 import android.accessibilityservice.AccessibilityService
+import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.example.pitabmdmstudent.AppBlockedActivity
 import com.example.pitabmdmstudent.event.AppEventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -11,13 +13,6 @@ import kotlinx.coroutines.launch
 class MyAccessibilityService : AccessibilityService() {
     companion object {
         var instance: MyAccessibilityService? = null
-    }
-
-    private val blockedApps = mutableSetOf<String>()
-
-    fun updateBlockedApps(list: List<String>) {
-        blockedApps.clear()
-        blockedApps.addAll(list)
     }
 
     override fun onServiceConnected() {
@@ -33,16 +28,24 @@ class MyAccessibilityService : AccessibilityService() {
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
             event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             val pkg = event.packageName?.toString() ?: return
+            Log.d("LimitTest", "Accesibility - Foreground app changed: $pkg")
             CoroutineScope(Dispatchers.Default).launch {
                 AppEventBus.emit(AppEventBus.DeviceEvent.ForegroundAppChanged(pkg))
             }
         }
-
-//        // --- Block app logic ---
-//        if (blockedApps.contains(pkg)) {
-//            performGlobalAction(GLOBAL_ACTION_HOME)
-//        }
     }
 
-    override fun onInterrupt() { }
+    override fun onInterrupt() {}
+
+    fun showBlockScreen(packageName: String, title: String, reason: String) {
+        val intent = Intent(this, AppBlockedActivity::class.java)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+
+        intent.putExtra("appName", packageName)
+        intent.putExtra("title", title)
+        intent.putExtra("reason", reason)
+
+        startActivity(intent)
+    }
 }

@@ -2,4 +2,9 @@
 <resources>
 
     <style name="Theme.PiTabMDMStudent" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Transparent.NoActionBar" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -12,6 +13,7 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.example.pitabmdmstudent.MainActivity
+import com.example.pitabmdmstudent.appRestriction.AppBlockManager
 import com.example.pitabmdmstudent.data.repository.StudentRepository
 import com.example.pitabmdmstudent.event.AppEventBus
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
@@ -30,13 +32,19 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class SocketService : Service() {
-
-    @Inject lateinit var socket: SocketIOConnection
-
-    @Inject lateinit var studentRepository: StudentRepository
+    @Inject
+    lateinit var socket: SocketIOConnection
+    @Inject
+    lateinit var studentRepository: StudentRepository
+    @Inject
+    lateinit var usageStatsManager: UsageStatsManager
 
     private val job = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + job)
+
+    private val todayUsageMap = mutableMapOf<String, Long>()
+    private var sessionStartMs = 0L
+    private var currentForegroundPackage: String? = null
 
     companion object {
         private const val NOTIFICATION_ID = 1987
@@ -71,10 +79,13 @@ class SocketService : Service() {
             IntentFilter(Intent.ACTION_BATTERY_CHANGED)
         )
 
+        AppBlockManager.initialize(applicationContext)
+
         // Listen to socket events
         observeSocketEvents()
         observeSystemEvents()
         startUsageStatsUploader()
+        startAppLimitMonitor()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -156,7 +167,19 @@ class SocketService : Service() {
         serviceScope.launch {
             AppEventBus.events.collect { event ->
                 when (event) {
-                    is AppEventBus.DeviceEvent.ForegroundAppChanged -> uploadDeviceState()
+                    is AppEventBus.DeviceEvent.ForegroundAppChanged -> {
+                        val now = System.currentTimeMillis()
+                        currentForegroundPackage?.let { previousPkg ->
+                            todayUsageMap[previousPkg] =
+                                (todayUsageMap[previousPkg] ?: 0) + (now - sessionStartMs)
+                            Log.d("LimitTest", "usage map updated: $todayUsageMap")
+                        }
+                        currentForegroundPackage = event.packageName
+                        sessionStartMs = now
+                        currentForegroundPackage?.let { AppBlockManager.checkAndEnforceBlocking(it) }
+                        uploadDeviceState()
+                    }
+
                     is AppEventBus.DeviceEvent.ChargingStateChanged -> uploadDeviceState()
                     // TODO: IMPLEMENT APPSTARTED IF NEEDED
                     is AppEventBus.DeviceEvent.AppStarted -> uploadDeviceState()
@@ -195,7 +218,7 @@ class SocketService : Service() {
         )
     }
 
-    private fun getAppName(context: Context, packageName: String) : String{
+    private fun getAppName(context: Context, packageName: String): String {
         val packageManager = context.packageManager
         return try {
             val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
@@ -225,5 +248,40 @@ class SocketService : Service() {
         val request = AppUsageStatsRequest(appUsageList)
 
         studentRepository.postAppUsageStats(request)
+    }
+
+    private fun startAppLimitMonitor() {
+        serviceScope.launch {
+            while (true) {
+                val pkg = currentForegroundPackage
+                Log.d("LimitTest", "CurrPkg in Monitor: $pkg")
+                if (pkg != null) {
+                    val now = System.currentTimeMillis()
+
+                    todayUsageMap[pkg] =
+                        (todayUsageMap[pkg] ?: 0L) + (now - sessionStartMs)
+
+                    sessionStartMs = now
+
+                    Log.d("LimitTest", "Checking limit")
+                    val usedSeconds = (todayUsageMap[pkg] ?: 0L) / 1000
+                    val rule = AppBlockManager.getRule(pkg)
+                    val limitSeconds = rule?.usageLimitSeconds ?: 0
+
+                    Log.d("LimitTest", "usageSeconds: $usedSeconds, limitSeconds: $limitSeconds")
+
+                    if (limitSeconds > 0 && usedSeconds >= limitSeconds) {
+                        Log.d("LimitTest", "$pkg exceeded limit $usedSeconds / $limitSeconds")
+
+                        MyAccessibilityService.instance?.showBlockScreen(
+                            pkg,
+                            "App blocked",
+                            "You have reached today's time limit for this app."
+                        )
+                    }
+                }
+                delay(5000)
+            }
+        }
     }
 }

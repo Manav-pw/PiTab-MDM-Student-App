@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.example.pitabmdmstudent.appRestriction.AppBlockManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -28,8 +29,6 @@ class SocketIOConnection @Inject constructor(
 ) : IConnection {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
-    private val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context)
 
     companion object {
         const val URL = "https://pi-os-backend.penpencil.co"
@@ -73,21 +72,16 @@ class SocketIOConnection @Inject constructor(
             val alwaysBlocked = messageObject.optBoolean("alwaysBlocked")
             val usageLimitSeconds = messageObject.optInt("usageLimitSeconds").toLong()
 
-            Log.d("SocketTest", "Event: $event, Message: $messageObject, json: $json")
-            println("Socket Event is -> $event json: $json")
-
             when (event) {
                 APP_BLOCK_RULE_UPDATED -> {
-                    scope.launch {
-//                        localDatabase.updateIsBlocked(packageName, alwaysBlocked)
-//                        localDatabase.updateTimeLimit(packageName, usageLimitSeconds)
-//                        println(
-//                            "Database data -> ${
-//                                localDatabase.getAll()
-//                                    .filter { it -> it.packageName.equals("co.penpencil.appstore") }
-//                            }"
-//                        )
-                    }
+                    Log.d("BlockTest", "Received APP_BLOCK_RULE_UPDATED for $packageName -> $alwaysBlocked, $usageLimitSeconds")
+                    Log.d("BlockTest", "event $event")
+                    AppBlockManager.updateRuleFromSocket(
+                        packageName = packageName,
+                        alwaysBlocked = alwaysBlocked,
+                        usageLimitSeconds = usageLimitSeconds,
+                        context = context
+                    )
                 }
 
                 DEVICE_SCREEN_SHARE_START -> {
@@ -151,7 +145,7 @@ class SocketIOConnection @Inject constructor(
                 DEVICE_SCREENSHOT_REQUEST -> {
 //                    val raw = args.firstOrNull() ?: return@Listener
 //                    val json = JSONObject(raw.toString())
-//
+////
 //                    val event = json.optString("event")
 //                    val messageObject = json.optJSONObject("message")
 //                    val pairingId = messageObject.optString("pairingId")
@@ -255,7 +249,6 @@ class SocketIOConnection @Inject constructor(
                     }
                     socket?.on(Socket.EVENT_CONNECT_ERROR) {
                         Log.d("SocketTest", "Socket connection error: ${it.first()}")
-                        println("Socket connection error: ${it.first()}")
                     }
                     socket?.on(Socket.EVENT_DISCONNECT) {
                         _socketEvents.tryEmit(SocketEvent.Disconnected)
