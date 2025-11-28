@@ -56,10 +56,7 @@ object AppUtils {
                 status == BatteryManager.BATTERY_STATUS_FULL
     }
 
-    fun getUsageStats(context: Context): List<AppUsageDetails> {
-        val usageStatsManager =
-            context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
-
+    fun getUsageStats(usageStatsManager: UsageStatsManager, context: Context): List<AppUsageDetails> {
         val end = System.currentTimeMillis()
         val start = end - (5 * 60 * 1000) // last 5 minutes
 
@@ -72,8 +69,11 @@ object AppUtils {
         val pm = context.packageManager
         val isoFormatter = SimpleDateFormat("yyyy-MM-dd'T'00:00:00'Z'", Locale.US)
 
+        val launcherPackages = getLauncherApps(context)
+
         return stats
             .filter { it.totalTimeInForeground > 0 }
+            .filter { it.packageName !in launcherPackages }
             .map { usage ->
                 val pkg = usage.packageName
                 val appName = try {
@@ -90,5 +90,14 @@ object AppUtils {
                     date = isoFormatter.format(Date())
                 )
             }
+    }
+
+    fun getLauncherApps(context: Context): Set<String> {
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val pm = context.packageManager
+
+        return pm.queryIntentActivities(intent, 0)
+            .map { it.activityInfo.packageName }
+            .toSet()
     }
 }

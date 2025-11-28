@@ -5,6 +5,7 @@ import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.data.network.ApiResponse
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
+import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import retrofit2.Response
 import javax.inject.Inject
 
@@ -26,4 +27,13 @@ class StudentDataSourceImpl @Inject constructor(
     override suspend fun postAppUsageStats(request: AppUsageStatsRequest): Response<ApiResponse<List<Any>>> {
         return api.postAppUsageStats(request)
     }
+
+    override suspend fun sendScreenshot(
+        pairingId: String,
+        sendScreenshotBody: SendScreenshotRequest
+    ): Response<ApiResponse<Unit>> {
+        return api.sendScreenshot(pairingId, sendScreenshotBody)
+    }
+
+
 }

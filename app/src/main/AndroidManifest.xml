@@ -8,6 +8,7 @@
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
 
     <application
         android:name=".PiTabMDMApplication"
@@ -20,14 +21,16 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PiTabMDMStudent">
         <activity
+            android:name=".ScreenCapturePermissionActivity"
+            android:exported="false" />
+        <activity
             android:name=".AppBlockedActivity"
             android:excludeFromRecents="true"
-            android:noHistory="true"
+            android:exported="false"
             android:launchMode="singleInstance"
+            android:noHistory="true"
             android:showOnLockScreen="true"
-            android:theme="@style/Theme.Transparent.NoActionBar"
-            android:exported="false" />
-
+            android:theme="@style/Theme.Transparent.NoActionBar" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -55,7 +58,7 @@
         <service
             android:name=".services.SocketService"
             android:exported="false"
-            android:foregroundServiceType="dataSync" />
+            android:foregroundServiceType="dataSync|mediaProjection" />
 
         <receiver
             android:name=".receivers.MyDeviceAdminReceiver"

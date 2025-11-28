@@ -13,15 +13,19 @@ import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import com.example.pitabmdmstudent.MainActivity
+import com.example.pitabmdmstudent.MediaProjectionHolder
+import com.example.pitabmdmstudent.ScreenCapturePermissionActivity
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
 import com.example.pitabmdmstudent.data.repository.StudentRepository
 import com.example.pitabmdmstudent.event.AppEventBus
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
+import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import com.example.pitabmdmstudent.models.request.VisibleApp
 import com.example.pitabmdmstudent.socket.SocketEvent
 import com.example.pitabmdmstudent.socket.SocketIOConnection
 import com.example.pitabmdmstudent.utils.AppUtils
+import com.example.pitabmdmstudent.utils.ScreenshotUtil
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,8 +75,15 @@ class SocketService : Service() {
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification("Connecting…"))
 
-        // Start socket
         socket.initializeCommunication()
+
+        if (MediaProjectionHolder.mediaProjection == null) {
+            val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } else {
+            ScreenshotUtil.setupScreenCapture(applicationContext)
+        }
 
         registerReceiver(
             BatteryReceiver(),
@@ -81,7 +92,6 @@ class SocketService : Service() {
 
         AppBlockManager.initialize(applicationContext)
 
-        // Listen to socket events
         observeSocketEvents()
         observeSystemEvents()
         startUsageStatsUploader()
@@ -117,11 +127,49 @@ class SocketService : Service() {
                         updateNotification("Disconnected")
                     }
 
+                    is SocketEvent.ScreenshotRequest -> {
+                        Log.d("ScreenshotTest", "Received screenshot request")
+                        if (MediaProjectionHolder.isReady()) {
+                            ScreenshotUtil.setupScreenCapture(applicationContext)
+                        }
+
+                        handleScreenshot(event.pairingId)
+                    }
+
                     is SocketEvent.HMSAudioCall -> TODO()
                     is SocketEvent.HMSScreenShare -> TODO()
                     is SocketEvent.HMSVideoCall -> TODO()
                     is SocketEvent.VideoCallEnd -> TODO()
+
                 }
+            }
+        }
+    }
+
+    private fun handleScreenshot(pairingId: String) {
+        serviceScope.launch {
+            try {
+                val base64 = ScreenshotUtil.takeScreenshot(applicationContext)
+
+                if (base64 == null) {
+                    Log.e("Screenshot", "Failed to capture screen")
+                    return@launch
+                }
+
+                val request = SendScreenshotRequest(
+                    screenshotBase64 = base64,
+                    pairingId = pairingId
+                )
+
+                val success = studentRepository.sendScreenshot(
+                    pairingId = pairingId,
+                    sendScreenshotRequest = request
+                )
+
+                Log.d("ScreenshotTest", "API success = $success")
+
+            } catch (e: Exception) {
+                Log.e("Screenshot", "Error while sending screenshot", e)
             }
         }
     }
@@ -238,7 +286,9 @@ class SocketService : Service() {
     }
 
     private suspend fun uploadAppUsage() {
-        val appUsageList = AppUtils.getUsageStats(applicationContext)
+        val appUsageList = AppUtils.getUsageStats(usageStatsManager,applicationContext)
+
+        Log.d("postUsageTest", "app List: $appUsageList")
 
         if (appUsageList.isEmpty()) {
             Log.d("postUsageTest", "No usage data available")

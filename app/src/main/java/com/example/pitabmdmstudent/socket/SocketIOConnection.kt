@@ -7,6 +7,8 @@ import android.preference.PreferenceManager
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
+import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
+import com.example.pitabmdmstudent.utils.ScreenshotUtil
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -143,24 +145,13 @@ class SocketIOConnection @Inject constructor(
                 }
 
                 DEVICE_SCREENSHOT_REQUEST -> {
-//                    val raw = args.firstOrNull() ?: return@Listener
-//                    val json = JSONObject(raw.toString())
-////
-//                    val event = json.optString("event")
-//                    val messageObject = json.optJSONObject("message")
-//                    val pairingId = messageObject.optString("pairingId")
-//                    Log.d("CustomScreenLog", pairingId.toString())
-//                    scope.launch {
-//                        val screenshot = ScreenshotUtil.captureScreenBase64(context)
-//                        Log.d("CustomScreenLog", screenshot.toString())
-//                        val sendScreenshotRequest =
-//                            SendScreenshotRequest(screenshot.toString(), pairingId)
-//                        studentUseCase.sendScreenshot(sendScreenshotRequest).onSuccess {
-//                            Log.d("CustomScreenLog", "API call successful")
-//                        }.onFailure {
-//                            Log.d("CustomScreenLog", "API call unsuccessful")
-//                        }
-//                    }
+                    val raw = args.firstOrNull() ?: return@Listener
+                    val json = JSONObject(raw.toString())
+                    val messageObject = json.optJSONObject("message")
+                    val pairingId = messageObject.optString("pairingId")
+                    Log.d("ScreenshotTest", pairingId.toString())
+                    _socketEvents.tryEmit(SocketEvent.ScreenshotRequest(pairingId))
+
                 }
 
                 APP_MANAGEMENT_REMOVE_APP -> {

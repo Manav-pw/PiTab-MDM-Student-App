@@ -34,4 +34,12 @@ class StudentRepository @Inject constructor(
         val response = studentDataSource.postAppUsageStats(appUsageRequest)
         return response.isSuccessful && (response.body()?.success == true)
     }
+
+    suspend fun sendScreenshot(
+        pairingId: String,
+        sendScreenshotRequest: com.example.pitabmdmstudent.models.request.SendScreenshotRequest
+    ): Boolean {
+        val response = studentDataSource.sendScreenshot(pairingId, sendScreenshotRequest)
+        return response.isSuccessful && (response.body()?.success == true)
+    }
 }

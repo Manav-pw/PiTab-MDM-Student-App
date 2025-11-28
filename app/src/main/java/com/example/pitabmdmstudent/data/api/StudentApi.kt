@@ -5,10 +5,12 @@ import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.data.network.ApiResponse
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
+import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 interface StudentApi {
     @GET("${BuildConfig.PARENT_BASE_URL}mdm/device-pairing/generate")
@@ -28,5 +30,11 @@ interface StudentApi {
     suspend fun postAppUsageStats(
         @Body appUsageStatsRequest: AppUsageStatsRequest
     ): Response<ApiResponse<List<Any>>>
+
+    @POST("${BuildConfig.PARENT_BASE_URL}/mdm/connect/screenshot/{pairingId}")
+    suspend fun sendScreenshot(
+        @Path("pairingId") pairingId: String,
+        @Body sendScreenshotBody: SendScreenshotRequest
+    ): Response<ApiResponse<Unit>>
 
 }
