@@ -21,10 +21,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.PiTabMDMStudent">
         <activity
-            android:name=".ScreenCapturePermissionActivity"
+            android:name=".ui.activity.ScreenCapturePermissionActivity"
             android:exported="false" />
         <activity
-            android:name=".AppBlockedActivity"
+            android:name=".ui.activity.AppBlockedActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleInstance"
@@ -32,7 +32,7 @@
             android:showOnLockScreen="true"
             android:theme="@style/Theme.Transparent.NoActionBar" />
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.activity.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.PiTabMDMStudent">

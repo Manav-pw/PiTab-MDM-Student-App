@@ -9,21 +9,25 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import com.example.pitabmdmstudent.MainActivity
+import androidx.core.content.edit
+import com.example.pitabmdmstudent.ui.activity.MainActivity
 import com.example.pitabmdmstudent.MediaProjectionHolder
-import com.example.pitabmdmstudent.ScreenCapturePermissionActivity
+import com.example.pitabmdmstudent.ui.activity.ScreenCapturePermissionActivity
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
-import com.example.pitabmdmstudent.data.repository.StudentRepository
+import com.example.pitabmdmstudent.data.remote.repository.StudentRepository
 import com.example.pitabmdmstudent.event.AppEventBus
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import com.example.pitabmdmstudent.models.request.VisibleApp
+import com.example.pitabmdmstudent.receivers.BatteryReceiver
 import com.example.pitabmdmstudent.socket.SocketEvent
 import com.example.pitabmdmstudent.socket.SocketIOConnection
+import com.example.pitabmdmstudent.utils.AppUsageUtils
 import com.example.pitabmdmstudent.utils.AppUtils
 import com.example.pitabmdmstudent.utils.ScreenshotUtil
 import dagger.hilt.android.AndroidEntryPoint
@@ -38,10 +42,15 @@ import javax.inject.Inject
 class SocketService : Service() {
     @Inject
     lateinit var socket: SocketIOConnection
+
     @Inject
     lateinit var studentRepository: StudentRepository
+
     @Inject
     lateinit var usageStatsManager: UsageStatsManager
+
+    @Inject
+    lateinit var sharedPrefs: SharedPreferences
 
     private val job = SupervisorJob()
     private val serviceScope = CoroutineScope(Dispatchers.IO + job)
@@ -54,6 +63,9 @@ class SocketService : Service() {
         private const val NOTIFICATION_ID = 1987
         private const val CHANNEL_ID = "socket_channel"
         private const val CHANNEL_NAME = "MDM Socket Connection"
+
+        private const val USAGE_PREF = "usage_stats_prefs"
+        private const val KEY_LAST_SYNC = "last_sync_timestamp"
 
         fun start(context: Context) {
             Log.d("SocketTest", "Service STARTED")
@@ -72,6 +84,9 @@ class SocketService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+
+        sharedPrefs = getSharedPreferences(USAGE_PREF, Context.MODE_PRIVATE)
+
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification("Connecting…"))
 
@@ -256,7 +271,7 @@ class SocketService : Service() {
 
         val pkg = service.rootInActiveWindow?.packageName?.toString()
             ?: return emptyList()
-        val label = getAppName(context, pkg)
+        val label = AppUtils.getAppName(context, pkg)
 
         return listOf(
             VisibleApp(
@@ -266,38 +281,54 @@ class SocketService : Service() {
         )
     }
 
-    private fun getAppName(context: Context, packageName: String): String {
-        val packageManager = context.packageManager
-        return try {
-            val applicationInfo = packageManager.getApplicationInfo(packageName, 0)
-            packageManager.getApplicationLabel(applicationInfo).toString()
-        } catch (e: Exception) {
-            packageName
-        }
-    }
-
     private fun startUsageStatsUploader() {
         serviceScope.launch {
             while (true) {
-                uploadAppUsage()
-                delay(5 * 60 * 1000) // every 5 minutes
+                try {
+                    uploadIncrementalAppUsage()
+                } catch (e: Exception) {
+                    Log.e("UsageUploader", "Error uploading usage", e)
+                }
+//                delay(5 * 60 * 1000) // every 5 minutes
+                delay(60 * 1000)
             }
         }
     }
 
-    private suspend fun uploadAppUsage() {
-        val appUsageList = AppUtils.getUsageStats(usageStatsManager,applicationContext)
+    private suspend fun uploadIncrementalAppUsage() {
+        val currentTime = System.currentTimeMillis()
+        val lastSyncTime = sharedPrefs.getLong(KEY_LAST_SYNC, AppUsageUtils.getTodayStartTime())
 
-        Log.d("postUsageTest", "app List: $appUsageList")
+        Log.d("UsageUploader", "Syncing from $lastSyncTime to $currentTime")
 
-        if (appUsageList.isEmpty()) {
-            Log.d("postUsageTest", "No usage data available")
+        // Get incremental usage since last sync
+        val incrementalUsage = AppUsageUtils.getIncrementalAppUsage(
+            applicationContext,
+            usageStatsManager,
+            applicationContext.packageName,
+            lastSyncTime,
+            currentTime
+        )
+
+        if (incrementalUsage.isEmpty()) {
+            Log.d("UsageUploader", "No new usage data since last sync")
+            // Still update sync time even if no data
+            sharedPrefs.edit { putLong(KEY_LAST_SYNC, currentTime) }
             return
         }
 
-        val request = AppUsageStatsRequest(appUsageList)
+        Log.d("UsageUploader", "Incremental usage: $incrementalUsage")
 
-        studentRepository.postAppUsageStats(request)
+        val request = AppUsageStatsRequest(incrementalUsage)
+
+        val success = studentRepository.postAppUsageStats(request)
+
+        if (success) {
+            sharedPrefs.edit { putLong(KEY_LAST_SYNC, currentTime) }
+            Log.d("UsageUploader", "Successfully uploaded ${incrementalUsage.size} app records")
+        } else {
+            Log.e("UsageUploader", "Failed to upload usage stats - will retry next sync")
+        }
     }
 
     private fun startAppLimitMonitor() {

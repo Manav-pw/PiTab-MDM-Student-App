@@ -4,7 +4,7 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
-import com.example.pitabmdmstudent.AppBlockedActivity
+import com.example.pitabmdmstudent.ui.activity.AppBlockedActivity
 import com.example.pitabmdmstudent.event.AppEventBus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

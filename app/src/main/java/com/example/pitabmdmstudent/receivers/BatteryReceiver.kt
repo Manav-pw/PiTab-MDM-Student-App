@@ -1,4 +1,4 @@
-package com.example.pitabmdmstudent.services
+package com.example.pitabmdmstudent.receivers
 
 import android.content.BroadcastReceiver
 import android.content.Context

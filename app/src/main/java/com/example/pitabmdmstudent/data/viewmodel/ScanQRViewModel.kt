@@ -1,6 +1,7 @@
-package com.example.pitabmdmstudent.viewmodel
+package com.example.pitabmdmstudent.data.viewmodel
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.core.graphics.set
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -34,7 +35,7 @@ fun generateQrBitmap(text: String, size: Int = 600): Bitmap {
     for (x in 0 until size) {
         for (y in 0 until size) {
             bitmap[x, y] =
-                if (bitMatrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                if (bitMatrix[x, y]) Color.BLACK else Color.WHITE
         }
     }
     return bitmap

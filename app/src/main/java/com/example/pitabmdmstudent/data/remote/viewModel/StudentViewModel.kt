@@ -1,12 +1,8 @@
-package com.example.pitabmdmstudent.viewmodel
+package com.example.pitabmdmstudent.data.remote.viewModel
 
-import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.pitabmdmstudent.data.repository.StudentRepository
-import com.example.pitabmdmstudent.models.request.DeviceStateRequest
-import com.example.pitabmdmstudent.utils.AppUtils
+import com.example.pitabmdmstudent.data.remote.repository.StudentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow

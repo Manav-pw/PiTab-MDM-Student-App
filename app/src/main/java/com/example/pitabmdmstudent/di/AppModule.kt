@@ -5,11 +5,11 @@ import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.pitabmdmstudent.BuildConfig
-import com.example.pitabmdmstudent.data.api.StudentApi
-import com.example.pitabmdmstudent.data.datasource.StudentDataSource
-import com.example.pitabmdmstudent.data.datasource.StudentDataSourceImpl
-import com.example.pitabmdmstudent.data.network.AuthInterceptor
-import com.example.pitabmdmstudent.repository.DashboardRepository
+import com.example.pitabmdmstudent.data.remote.api.StudentApi
+import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSource
+import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSourceImpl
+import com.example.pitabmdmstudent.data.remote.network.AuthInterceptor
+import com.example.pitabmdmstudent.data.repository.DashboardRepository
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -17,9 +17,6 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -99,7 +96,7 @@ object AppModule {
         @ApplicationContext context: Context,
         usageStatsManager: UsageStatsManager
     ): DashboardRepository {
-        return DashboardRepository(context, usageStatsManager)
+        return DashboardRepository(context)
     }
 
 }

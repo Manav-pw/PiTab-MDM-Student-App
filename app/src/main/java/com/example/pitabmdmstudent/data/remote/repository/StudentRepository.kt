@@ -1,8 +1,10 @@
-package com.example.pitabmdmstudent.data.repository
+package com.example.pitabmdmstudent.data.remote.repository
 
-import com.example.pitabmdmstudent.data.datasource.StudentDataSource
+import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSource
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
+import com.example.pitabmdmstudent.models.request.DeviceStateRequest
+import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +22,7 @@ class StudentRepository @Inject constructor(
         }
     }
 
-    suspend fun updateDeviceState(deviceStateRequest: com.example.pitabmdmstudent.models.request.DeviceStateRequest): Boolean {
+    suspend fun updateDeviceState(deviceStateRequest: DeviceStateRequest): Boolean {
         val response = studentDataSource.updateDeviceState(deviceStateRequest)
         return response.isSuccessful && (response.body()?.success == true)
     }
@@ -37,7 +39,7 @@ class StudentRepository @Inject constructor(
 
     suspend fun sendScreenshot(
         pairingId: String,
-        sendScreenshotRequest: com.example.pitabmdmstudent.models.request.SendScreenshotRequest
+        sendScreenshotRequest: SendScreenshotRequest
     ): Boolean {
         val response = studentDataSource.sendScreenshot(pairingId, sendScreenshotRequest)
         return response.isSuccessful && (response.body()?.success == true)

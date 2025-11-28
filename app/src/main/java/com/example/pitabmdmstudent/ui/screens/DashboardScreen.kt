@@ -13,7 +13,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -23,8 +22,8 @@ import com.example.pitabmdmstudent.ui.components.AllAppsCard
 import com.example.pitabmdmstudent.ui.components.DailyAverageCard
 import com.example.pitabmdmstudent.ui.components.MostUsedAppCard
 import com.example.pitabmdmstudent.ui.components.TopBar
-import com.example.pitabmdmstudent.viewmodel.DashboardViewModel
-import com.example.pitabmdmstudent.viewmodel.StudentViewModel
+import com.example.pitabmdmstudent.data.viewmodel.DashboardViewModel
+import com.example.pitabmdmstudent.data.remote.viewModel.StudentViewModel
 import java.util.Base64
 
 @Composable
@@ -33,14 +32,22 @@ fun DashboardScreen(
     dashboardVm: DashboardViewModel = hiltViewModel(),
     studentVm: StudentViewModel = hiltViewModel()
 ) {
-    val usageList by dashboardVm.appUsageFlow.collectAsState()
+    val todayUsage by dashboardVm.todayUsageFlow.collectAsState()
+    val weeklyUsage by dashboardVm.weeklyUsageFlow.collectAsState()
+    val totalToday by dashboardVm.totalTodayFlow.collectAsState()
+    val totalWeek by dashboardVm.totalWeekFlow.collectAsState()
 
     LaunchedEffect(Unit) {
+        dashboardVm.loadTodayUsage()
         dashboardVm.loadWeeklyUsage()
     }
 
-    LaunchedEffect(usageList) {
-        Log.d("DashboardScreen", "Usage data: $usageList")
+    // TODO: Make a pull to refresh to reload usage stats
+    LaunchedEffect(todayUsage,weeklyUsage) {
+        Log.d("DashboardScreen", "Today Usage: $todayUsage")
+        Log.d("DashboardScreen", "Weekly Usage: $weeklyUsage")
+        Log.d("DashboardScreen", "Total Today: $totalToday")
+        Log.d("DashboardScreen", "Total Week: $totalWeek")
     }
 
     Column(

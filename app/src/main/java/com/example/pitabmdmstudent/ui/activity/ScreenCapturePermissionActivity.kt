@@ -1,6 +1,5 @@
-package com.example.pitabmdmstudent
+package com.example.pitabmdmstudent.ui.activity
 
-import android.content.Context
 import android.content.Intent
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
@@ -11,14 +10,11 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.pitabmdmstudent.navigation.NavGraph
+import com.example.pitabmdmstudent.MediaProjectionHolder
 import com.example.pitabmdmstudent.ui.theme.PiTabMDMStudentTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -32,14 +28,14 @@ class ScreenCapturePermissionActivity : ComponentActivity() {
         setContent {
             PiTabMDMStudentTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.Companion.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {}
             }
         }
 
         projectionManager =
-            getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
+            getSystemService(MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
 
         val intent = projectionManager.createScreenCaptureIntent()
         startActivityForResult(intent, 999)

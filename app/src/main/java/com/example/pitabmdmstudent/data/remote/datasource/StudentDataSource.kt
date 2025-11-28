@@ -1,8 +1,8 @@
-package com.example.pitabmdmstudent.data.datasource
+package com.example.pitabmdmstudent.data.remote.datasource
 
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
-import com.example.pitabmdmstudent.data.network.ApiResponse
+import com.example.pitabmdmstudent.data.remote.network.ApiResponse
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import retrofit2.Response

@@ -1,6 +1,5 @@
 package com.example.pitabmdmstudent.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
-import com.example.pitabmdmstudent.viewmodel.ScanQRViewModel
+import com.example.pitabmdmstudent.data.viewmodel.ScanQRViewModel
 
 @Composable
 fun ScanQRScreen(

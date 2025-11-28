@@ -1,4 +1,4 @@
-package com.example.pitabmdmstudent.data.network
+package com.example.pitabmdmstudent.data.remote.network
 
 import com.google.gson.annotations.SerializedName
 

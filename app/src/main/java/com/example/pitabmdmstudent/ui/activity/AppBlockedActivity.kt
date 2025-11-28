@@ -1,16 +1,12 @@
-package com.example.pitabmdmstudent
+package com.example.pitabmdmstudent.ui.activity
 
 import AppLimitWarningDialog
-import android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME
+import android.accessibilityservice.AccessibilityService
 import android.os.Bundle
-import android.window.OnBackInvokedDispatcher
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import com.example.pitabmdmstudent.R
 import com.example.pitabmdmstudent.services.MyAccessibilityService
 
 class AppBlockedActivity : ComponentActivity() {
@@ -27,7 +23,9 @@ class AppBlockedActivity : ComponentActivity() {
                 title = title,
                 message = reason,
                 onDismiss = {
-                    MyAccessibilityService.instance?.performGlobalAction(GLOBAL_ACTION_HOME)
+                    MyAccessibilityService.Companion.instance?.performGlobalAction(
+                        AccessibilityService.GLOBAL_ACTION_HOME
+                    )
                     finish()
                 }
             )
@@ -35,7 +33,7 @@ class AppBlockedActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                MyAccessibilityService.instance?.performGlobalAction(GLOBAL_ACTION_HOME)
+                MyAccessibilityService.Companion.instance?.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
                 finish()
             }
         })

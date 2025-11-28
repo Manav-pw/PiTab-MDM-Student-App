@@ -1,10 +1,9 @@
-package com.example.pitabmdmstudent
+package com.example.pitabmdmstudent.ui.activity
 
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -12,10 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
-import androidx.navigation.compose.rememberNavController
-import com.example.pitabmdmstudent.event.AppEventBus
 import com.example.pitabmdmstudent.navigation.NavGraph
-import com.example.pitabmdmstudent.services.SocketService
 import com.example.pitabmdmstudent.ui.theme.PiTabMDMStudentTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -38,7 +34,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             PiTabMDMStudentTheme {
                 Surface(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.Companion.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavGraph()

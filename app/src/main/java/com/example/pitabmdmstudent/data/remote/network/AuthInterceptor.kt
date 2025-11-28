@@ -1,4 +1,4 @@
-package com.example.pitabmdmstudent.data.network
+package com.example.pitabmdmstudent.data.remote.network
 
 import com.example.pitabmdmstudent.BuildConfig
 import okhttp3.Interceptor
