@@ -23,7 +23,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "PARENT_BASE_URL", "\"https://api.penpencil.co/pi-os-backend/v1/\"")
-        buildConfigField("String", "PARENT_BEARER_TOKEN", "\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjQ0MDA4NzUuNDMzLCJkYXRhIjp7Il9pZCI6IjY4ZjBiNTEwZmRiNWYyYzBiYjFlMWQxNCIsInVzZXJuYW1lIjoiOTk1MzA2NjUyOSIsImZpcnN0TmFtZSI6IiIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjY1OTNiNGE5ZTY3ODI4MDAxODc0MmM0YyIsIndlYnNpdGUiOiJsZWFybm9zLmxpdmUiLCJuYW1lIjoibGVhcm4tb3MifSwicm9sZXMiOlsiNWIyN2JkOTY1ODQyZjk1MGE3NzhjNmVmIl0sImNvdW50cnlHcm91cCI6IklOIiwib25lUm9sZXMiOltdLCJ0eXBlIjoiVVNFUiJ9LCJpYXQiOjE3NjM3OTYwNzV9.yUlpBdR3t5jrqxRuE9tFkpVhgNSKYi8ON_W_hMsdqTU\"")
+        buildConfigField("String", "PARENT_BEARER_TOKEN", "\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUwMTAxNjUuMDc4LCJkYXRhIjp7Il9pZCI6IjY5MTVjZmM1NTA3ODE3MDE2YzdiZGE1NiIsInVzZXJuYW1lIjoiOTUyODkwMzQzMSIsImZpcnN0TmFtZSI6IiIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjY1OTNiNGE5ZTY3ODI4MDAxODc0MmM0YyIsIndlYnNpdGUiOiJsZWFybm9zLmxpdmUiLCJuYW1lIjoibGVhcm4tb3MifSwicm9sZXMiOlsiNWIyN2JkOTY1ODQyZjk1MGE3NzhjNmVmIl0sImNvdW50cnlHcm91cCI6IklOIiwib25lUm9sZXMiOltdLCJ0eXBlIjoiVVNFUiJ9LCJpYXQiOjE3NjQ0MDUzNjV9.FFVbb3IqOvNOSwXIwDWWQxKk-Xjj2Jcfs8z8PDznbAc\"")
     }
 
     buildTypes {

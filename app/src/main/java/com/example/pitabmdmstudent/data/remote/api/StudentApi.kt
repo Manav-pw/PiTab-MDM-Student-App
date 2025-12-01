@@ -31,7 +31,7 @@ interface StudentApi {
         @Body appUsageStatsRequest: AppUsageStatsRequest
     ): Response<ApiResponse<List<Any>>>
 
-    @POST("${BuildConfig.PARENT_BASE_URL}/mdm/connect/screenshot/{pairingId}")
+    @POST("${BuildConfig.PARENT_BASE_URL}mdm/connect/screenshot/{pairingId}")
     suspend fun sendScreenshot(
         @Path("pairingId") pairingId: String,
         @Body sendScreenshotBody: SendScreenshotRequest

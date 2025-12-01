@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
+import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -66,10 +67,23 @@ class SocketService : Service() {
 
         private const val USAGE_PREF = "usage_stats_prefs"
         private const val KEY_LAST_SYNC = "last_sync_timestamp"
+        
+        const val ACTION_PERMISSION_GRANTED = "ACTION_PERMISSION_GRANTED"
 
         fun start(context: Context) {
             Log.d("SocketTest", "Service STARTED")
             val intent = Intent(context, SocketService::class.java)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
+        }
+        
+        fun onPermissionGranted(context: Context) {
+            val intent = Intent(context, SocketService::class.java).apply {
+                action = ACTION_PERMISSION_GRANTED
+            }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
             } else {
@@ -88,7 +102,15 @@ class SocketService : Service() {
         sharedPrefs = getSharedPreferences(USAGE_PREF, Context.MODE_PRIVATE)
 
         createNotificationChannel()
-        startForeground(NOTIFICATION_ID, createNotification("Connecting…"))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(
+                NOTIFICATION_ID, 
+                createNotification("Connecting…"), 
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            startForeground(NOTIFICATION_ID, createNotification("Connecting…"))
+        }
 
         socket.initializeCommunication()
 
@@ -114,6 +136,46 @@ class SocketService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_PERMISSION_GRANTED) {
+             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                try {
+                    startForeground(
+                        NOTIFICATION_ID, 
+                        createNotification("Screen Capture Ready"), 
+                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                    )
+
+                    // Now that we are a MediaProjection foreground service, we can get the token
+                    val resultCode = MediaProjectionHolder.resultCode
+                    val data = MediaProjectionHolder.data
+                    if (resultCode != 0 && data != null) {
+                        val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
+                        val mp = projectionManager.getMediaProjection(resultCode, data)
+                        MediaProjectionHolder.mediaProjection = mp
+
+                        mp?.registerCallback(object : android.media.projection.MediaProjection.Callback(){
+                            override fun onStop() {
+                                Log.d("ScreenPerm", "MediaProjection stopped by system")
+                                MediaProjectionHolder.reset()
+                            }
+                        }, android.os.Handler(android.os.Looper.getMainLooper()))
+                        MediaProjectionHolder.callbackRegistered = true
+
+                        ScreenshotUtil.setupScreenCapture(applicationContext)
+                        Log.d("SocketService", "MediaProjection initialized successfully")
+                    }
+                } catch (e: Exception) {
+                    Log.e("SocketService", "Failed to start MediaProjection foreground service", e)
+                }
+            } else if (MediaProjectionHolder.isReady()) {
+                // Pre-Q (should rarely happen for this requirement logic, but good fallback)
+                ScreenshotUtil.setupScreenCapture(applicationContext)
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
 
     override fun onDestroy() {
         super.onDestroy()

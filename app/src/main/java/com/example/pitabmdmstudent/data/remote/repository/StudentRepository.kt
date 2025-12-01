@@ -1,5 +1,6 @@
 package com.example.pitabmdmstudent.data.remote.repository
 
+import android.util.Log
 import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSource
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
@@ -42,6 +43,7 @@ class StudentRepository @Inject constructor(
         sendScreenshotRequest: SendScreenshotRequest
     ): Boolean {
         val response = studentDataSource.sendScreenshot(pairingId, sendScreenshotRequest)
+        Log.d("ScreenShotTest", "response api: $response")
         return response.isSuccessful && (response.body()?.success == true)
     }
 }
