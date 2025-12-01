@@ -16,28 +16,41 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pitabmdmstudent.navigation.Routes
 import com.example.pitabmdmstudent.receivers.MyDeviceAdminReceiver
+import com.example.pitabmdmstudent.data.remote.viewModel.AuthViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(navController: NavController) {
+fun SplashScreen(
+    navController: NavController,
+    authViewModel: AuthViewModel = hiltViewModel(),
+) {
     val context = LocalContext.current
     LaunchedEffect(Unit) {
         delay(1000)
 
-        val allGranted = isAccessibilityEnabled(context) &&
-                isUsageAccessGranted(context) &&
-                isDeviceAdminEnabled(context)
+        val hasToken = authViewModel.hasValidAccessToken()
 
-        if (allGranted) {
-            navController.navigate(Routes.Dashboard.route) {
+        if (!hasToken) {
+            navController.navigate(Routes.Login.route) {
                 popUpTo(Routes.Splash.route) { inclusive = true }
             }
         } else {
-            navController.navigate(Routes.Permission.route) {
-                popUpTo(Routes.Splash.route) { inclusive = true }
+            val allGranted = isAccessibilityEnabled(context) &&
+                    isUsageAccessGranted(context) &&
+                    isDeviceAdminEnabled(context)
+
+            if (allGranted) {
+                navController.navigate(Routes.Dashboard.route) {
+                    popUpTo(Routes.Splash.route) { inclusive = true }
+                }
+            } else {
+                navController.navigate(Routes.Permission.route) {
+                    popUpTo(Routes.Splash.route) { inclusive = true }
+                }
             }
         }
     }

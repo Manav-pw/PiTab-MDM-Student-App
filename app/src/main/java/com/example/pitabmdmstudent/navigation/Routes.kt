@@ -5,4 +5,5 @@ sealed class Routes(val route: String) {
     object Permission: Routes("permission_screen")
     object Dashboard : Routes("dashboard_screen")
     object ScanQR : Routes("scan_qr_screen/{pairing_code}")
+    object Login : Routes("login_screen")
 }

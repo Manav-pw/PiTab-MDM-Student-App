@@ -22,8 +22,12 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
+        buildConfigField("String", "AUTH_BASE_URL", "\"https://api.penpencil.co/\"")
+        buildConfigField("String", "MDM_BASE_URL", "\"https://api.penpencil.co/pi-os-backend/v1/\"")
         buildConfigField("String", "PARENT_BASE_URL", "\"https://api.penpencil.co/pi-os-backend/v1/\"")
-        buildConfigField("String", "PARENT_BEARER_TOKEN", "\"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUwMTAxNjUuMDc4LCJkYXRhIjp7Il9pZCI6IjY5MTVjZmM1NTA3ODE3MDE2YzdiZGE1NiIsInVzZXJuYW1lIjoiOTUyODkwMzQzMSIsImZpcnN0TmFtZSI6IiIsImxhc3ROYW1lIjoiIiwib3JnYW5pemF0aW9uIjp7Il9pZCI6IjY1OTNiNGE5ZTY3ODI4MDAxODc0MmM0YyIsIndlYnNpdGUiOiJsZWFybm9zLmxpdmUiLCJuYW1lIjoibGVhcm4tb3MifSwicm9sZXMiOlsiNWIyN2JkOTY1ODQyZjk1MGE3NzhjNmVmIl0sImNvdW50cnlHcm91cCI6IklOIiwib25lUm9sZXMiOltdLCJ0eXBlIjoiVVNFUiJ9LCJpYXQiOjE3NjQ0MDUzNjV9.FFVbb3IqOvNOSwXIwDWWQxKk-Xjj2Jcfs8z8PDznbAc\"")
+        buildConfigField("String", "MDM_ORG_ID", "\"6593b4a9e678280018742c4c\"")
+        buildConfigField("String", "PW_CLIENT_SECRET", "\"KjPXuAVfC5xbmgreETNMaL7z\"")
+        buildConfigField("String", "SOCKET_URL", "\"wss://pi-os-backend.penpencil.co\"")
     }
 
     buildTypes {

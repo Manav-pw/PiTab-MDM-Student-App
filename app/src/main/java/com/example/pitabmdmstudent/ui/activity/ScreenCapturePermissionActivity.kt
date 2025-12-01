@@ -49,6 +49,23 @@ class ScreenCapturePermissionActivity : ComponentActivity() {
 
             MediaProjectionHolder.resultCode = resultCode
             MediaProjectionHolder.data = data
+
+
+            // val mp = projectionManager.getMediaProjection(resultCode, data)
+            // MediaProjectionHolder.mediaProjection = mp
+
+            // if (!MediaProjectionHolder.callbackRegistered) {
+            //     mp?.registerCallback(object : MediaProjection.Callback(){
+            //         override fun onStop() {
+            //             Log.d("ScreenPerm", "MediaProjection stopped by system")
+            //             MediaProjectionHolder.reset() // Use reset instead of manual cleanup
+            //         }
+            //     }, Handler(Looper.getMainLooper()))
+
+            //     MediaProjectionHolder.callbackRegistered = true
+            // }
+
+            // Log.d("ScreenPerm", "Permission granted, MediaProjection saved & callback registered!")
             
             // Move MediaProjection creation to SocketService after it promotes to foreground type mediaProjection
             Log.d("ScreenPerm", "Permission granted, data saved. Asking Service to init projection.")

@@ -1,11 +1,14 @@
 package com.example.pitabmdmstudent.di
 
-import android.app.Application
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.pitabmdmstudent.BuildConfig
+import com.example.pitabmdmstudent.data.auth.AuthPreferences
+import com.example.pitabmdmstudent.data.remote.api.AuthApi
 import com.example.pitabmdmstudent.data.remote.api.StudentApi
+import com.example.pitabmdmstudent.data.remote.datasource.AuthDataSource
+import com.example.pitabmdmstudent.data.remote.datasource.AuthDataSourceImpl
 import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSource
 import com.example.pitabmdmstudent.data.remote.datasource.StudentDataSourceImpl
 import com.example.pitabmdmstudent.data.remote.network.AuthInterceptor
@@ -17,6 +20,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Named
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
@@ -35,7 +39,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideAuthInterceptor(): AuthInterceptor = AuthInterceptor()
+    fun provideAuthInterceptor(
+        authPreferences: AuthPreferences,
+    ): AuthInterceptor = AuthInterceptor(authPreferences)
 
     @Provides
     @Singleton
@@ -57,7 +63,7 @@ object AppModule {
         client: OkHttpClient
     ): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.PARENT_BASE_URL)
+            .baseUrl(BuildConfig.MDM_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create(gson))
             .client(client)
             .build()
@@ -79,8 +85,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideSharedPrefs(app: Application): SharedPreferences =
-        app.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+    fun provideSharedPrefs(
+        @ApplicationContext context: Context,
+    ): SharedPreferences =
+        context.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+
+    @Provides
+    @Singleton
+    fun provideAuthPreferences(
+        sharedPreferences: SharedPreferences,
+    ): AuthPreferences = AuthPreferences(sharedPreferences)
 
     @Provides
     @Singleton
@@ -98,5 +112,33 @@ object AppModule {
     ): DashboardRepository {
         return DashboardRepository(context)
     }
+
+    @Provides
+    @Singleton
+    @Named("authRetrofit")
+    fun provideAuthRetrofit(
+        gson: Gson,
+        client: OkHttpClient,
+    ): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BuildConfig.AUTH_BASE_URL)
+            .addConverterFactory(GsonConverterFactory.create(gson))
+            .client(client)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthApi(
+        @Named("authRetrofit") retrofit: Retrofit,
+    ): AuthApi {
+        return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAuthDataSource(
+        api: AuthApi,
+    ): AuthDataSource = AuthDataSourceImpl(api)
 
 }

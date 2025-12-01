@@ -3,9 +3,9 @@ package com.example.pitabmdmstudent.socket
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.preference.PreferenceManager
 import android.util.Log
 import androidx.core.content.ContextCompat
+import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
 import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import com.example.pitabmdmstudent.utils.ScreenshotUtil
@@ -33,7 +33,7 @@ class SocketIOConnection @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     companion object {
-        const val URL = "https://pi-os-backend.penpencil.co"
+        const val URL = BuildConfig.SOCKET_URL
         const val DEVICE_PAIRING_STATUS_CHANGED = "device_pairing_status_changed"
         const val HMS_AUTH_TOKEN = "hms_auth_token"
         const val HMS_ROOM_CODE = "hms_room_code"
@@ -206,8 +206,8 @@ class SocketIOConnection @Inject constructor(
     override fun initializeCommunication() {
         try {
             scope.launch {
-                val token = sharedPrefs.getString("socket_token", "AMBAvvunWpooIlRQkVK9cGw+srpLwesKwOdSYImLovs=")
-                val userId = sharedPrefs.getString("user_id", "6921646bb7109a65974ec0e3")
+                val token = sharedPrefs.getString("socket_token", null)
+                val userId = sharedPrefs.getString("user_id", null)
                 Log.d("SocketTest", "Socket Auth -> In initialize $token, $userId")
                 println("Socket Auth -> In initialize $token, $userId")
                 if (token != null && userId != null) {
@@ -218,7 +218,7 @@ class SocketIOConnection @Inject constructor(
                     Log.d("SocketTest", "Socket Auth -> $authMap")
                     println("Socket Auth -> $authMap")
                     socket = IO.socket(
-                        "wss://pi-os-backend.penpencil.co",
+                        URL,
                         IO.Options.builder()
                             .setPath("/ws")
                             .setTransports(arrayOf("websocket"))
