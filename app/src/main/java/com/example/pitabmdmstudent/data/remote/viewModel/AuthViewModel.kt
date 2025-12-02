@@ -1,5 +1,6 @@
 package com.example.pitabmdmstudent.data.remote.viewModel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.remote.repository.AuthRepository
@@ -32,9 +33,11 @@ class AuthViewModel @Inject constructor(
     }
 
     fun requestOtp(phoneNumber: String, countryCode: String) {
+        Log.d("OTP","request")
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, otpSent = false)
         viewModelScope.launch {
             val success = authRepository.requestOtp(phoneNumber, countryCode)
+            Log.d("OTP","done")
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 otpSent = success,

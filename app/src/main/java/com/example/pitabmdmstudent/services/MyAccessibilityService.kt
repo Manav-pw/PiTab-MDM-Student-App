@@ -29,7 +29,7 @@ class MyAccessibilityService : AccessibilityService() {
             event.eventType == AccessibilityEvent.TYPE_WINDOWS_CHANGED) {
             val pkg = event.packageName?.toString() ?: return
             Log.d("LimitTest", "Accesibility - Foreground app changed: $pkg")
-            CoroutineScope(Dispatchers.Default).launch {
+            CoroutineScope(Dispatchers.IO).launch {
                 AppEventBus.emit(AppEventBus.DeviceEvent.ForegroundAppChanged(pkg))
             }
         }

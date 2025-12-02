@@ -21,7 +21,7 @@ class ScanQRViewModel @Inject constructor() : ViewModel() {
     val qrBitmap = _qrBitmap.asStateFlow()
 
     fun setCode(code: String) {
-        viewModelScope.launch(Dispatchers.Default) {
+        viewModelScope.launch(Dispatchers.IO) {
             _qrBitmap.value = generateQrBitmap(code)
         }
     }
