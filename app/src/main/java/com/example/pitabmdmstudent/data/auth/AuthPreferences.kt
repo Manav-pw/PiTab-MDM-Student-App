@@ -54,6 +54,18 @@ class AuthPreferences @Inject constructor(
 
     fun hasValidAccessToken(): Boolean = getAccessToken() != null
 
+    fun saveDeviceLogin(
+        socketToken: String,
+        userId: String,
+        userName: String?,
+    ) {
+        sharedPreferences.edit()
+            .putString(KEY_SOCKET_TOKEN, socketToken)
+            .putString(KEY_USER_ID, userId)
+            .putString(KEY_USER_FIRST_NAME, userName ?: "")
+            .apply()
+    }
+
     fun clear() {
         sharedPreferences.edit()
             .remove(KEY_ACCESS_TOKEN)

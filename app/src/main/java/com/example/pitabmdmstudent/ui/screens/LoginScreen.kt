@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -34,6 +35,8 @@ fun LoginScreen(
     val phoneState = remember { mutableStateOf("") }
     val otpState = remember { mutableStateOf("") }
     val nameState = remember { mutableStateOf("") }
+
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier
@@ -92,17 +95,21 @@ fun LoginScreen(
 
             Button(
                 onClick = {
+                    val androidId = android.provider.Settings.Secure.getString(
+                        context.contentResolver,
+                        android.provider.Settings.Secure.ANDROID_ID
+                    ) ?: java.util.UUID.randomUUID().toString()
+
                     viewModel.verifyOtp(
                         phoneNumber = phoneState.value,
                         otp = otpState.value,
+                        deviceOS = "android",
+                        machineId = androidId,
                         onSuccess = {
                             navController.navigate(Routes.Splash.route) {
                                 popUpTo(Routes.Login.route) { inclusive = true }
                             }
-                        },
-                        onRequireName = {
-                            // Name section will be displayed based on uiState.requireName
-                        },
+                        }
                     )
                 },
                 enabled = !uiState.isLoading,
@@ -126,11 +133,8 @@ fun LoginScreen(
 
             Button(
                 onClick = {
-                    viewModel.registerUser(
-                        firstName = nameState.value,
-                        phoneNumber = phoneState.value,
-                        countryCode = countryCodeState.value,
-                        otp = otpState.value,
+                    viewModel.updateDeviceName(
+                        name = nameState.value,
                     ) {
                         navController.navigate(Routes.Splash.route) {
                             popUpTo(Routes.Login.route) { inclusive = true }

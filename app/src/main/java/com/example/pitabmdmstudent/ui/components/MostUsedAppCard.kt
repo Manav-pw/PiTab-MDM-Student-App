@@ -24,7 +24,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 @Composable
-fun MostUsedAppCard() {
+fun MostUsedAppCard(
+    appName: String?,
+    appUsageMillis: Long,
+    totalUsageMillis: Long,
+    rangeLabel: String
+) {
     Card(
         modifier = Modifier.fillMaxWidth().fillMaxHeight().padding(16.dp),
         colors = CardDefaults.cardColors(
@@ -50,12 +55,12 @@ fun MostUsedAppCard() {
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Text(
-                        text = "Pixel Launcher",
+                        text = appName ?: "No usage yet",
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Most Used App (This Week)",
+                        text = "Most Used App ($rangeLabel)",
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
@@ -74,12 +79,12 @@ fun MostUsedAppCard() {
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Text(
-                        text = "0m",
+                        text = formatDuration(appUsageMillis),
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Usage Time",
+                        text = "Usage Time ($rangeLabel)",
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
@@ -98,17 +103,29 @@ fun MostUsedAppCard() {
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
                     Text(
-                        text = "1m",
+                        text = formatDuration(totalUsageMillis),
                         color = Color.White,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Total This Week",
+                        text = "Total $rangeLabel",
                         color = Color.Gray,
                         fontSize = 12.sp
                     )
                 }
             }
         }
+    }
+}
+
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+
+    return if (minutes >= 1) {
+        "${minutes}m"
+    } else {
+        "${seconds} sec"
     }
 }

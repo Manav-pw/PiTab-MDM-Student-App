@@ -2,13 +2,17 @@ package com.example.pitabmdmstudent.data.remote.repository
 
 import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.data.auth.AuthPreferences
+import com.example.pitabmdmstudent.data.remote.api.DeviceAuthApi
 import com.example.pitabmdmstudent.data.remote.datasource.AuthDataSource
+import com.example.pitabmdmstudent.models.auth.DeviceLoginRequest
+import com.example.pitabmdmstudent.models.auth.DeviceLoginRes
+import com.example.pitabmdmstudent.models.auth.GetOtpRequestBody
 import com.example.pitabmdmstudent.models.auth.GetTokenDto
 import com.example.pitabmdmstudent.models.auth.GetTokenRequestBody
-import com.example.pitabmdmstudent.models.auth.GetOtpRequestBody
 import com.example.pitabmdmstudent.models.auth.RegisterUserDto
 import com.example.pitabmdmstudent.models.auth.RegisterUserRequestBody
 import com.example.pitabmdmstudent.models.auth.ResendOtpRequestBody
+import com.example.pitabmdmstudent.models.auth.UpdateNameRequest
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -16,6 +20,7 @@ import javax.inject.Singleton
 class AuthRepository @Inject constructor(
     private val authDataSource: AuthDataSource,
     private val authPreferences: AuthPreferences,
+    private val deviceAuthApi: DeviceAuthApi,
 ) {
 
     private val organizationId: String?
@@ -96,6 +101,48 @@ class AuthRepository @Inject constructor(
     }
 
     fun hasValidAccessToken(): Boolean = authPreferences.hasValidAccessToken()
+
+    suspend fun loginDevice(
+        phoneNumber: String,
+        deviceOS: String,
+        machineId: String,
+    ): DeviceLoginRes? {
+        val phoneNumberLong = phoneNumber.toLongOrNull() ?: return null
+        val body = DeviceLoginRequest(
+            phone = phoneNumberLong,
+            deviceOS = deviceOS,
+            machineId = machineId,
+        )
+        val response = deviceAuthApi.loginDevice(body)
+        return if (response.isSuccessful) {
+            val data = response.body()?.data
+            if (data != null) {
+                authPreferences.saveDeviceLogin(
+                    socketToken = data.socketToken,
+                    userId = data.userId,
+                    userName = data.user?.name,
+                )
+            }
+            data
+        } else {
+            null
+        }
+    }
+
+    suspend fun updateDeviceName(
+        name: String,
+    ): Boolean {
+        val body = UpdateNameRequest(name = name)
+        val response = deviceAuthApi.updateName(body)
+        if (response.isSuccessful && response.body()?.success == true) {
+            return true
+        }
+        return false
+    }
+
+    fun clearSession() {
+        authPreferences.clear()
+    }
 
     private fun saveToken(dto: GetTokenDto) {
         authPreferences.saveToken(

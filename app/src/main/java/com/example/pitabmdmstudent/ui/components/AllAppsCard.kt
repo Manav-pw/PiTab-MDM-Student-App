@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -22,23 +24,35 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
 import com.example.pitabmdmstudent.models.AppUsage
 
 @Composable
-fun AllAppsCard(apps: List<AppUsage>) {
+fun AllAppsCard(
+    title: String,
+    apps: List<AppUsage>
+) {
     DashboardCard(modifier = Modifier.fillMaxHeight()) {
-        Text(
-            "All Apps (This Week)",
-            color = Color.White,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold
-        )
+        val scrollState = rememberScrollState()
 
-        Spacer(Modifier.height(16.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .verticalScroll(scrollState)
+        ) {
+            Text(
+                title,
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
 
-        apps.forEach { app ->
-            AppUsageRow(app)
-            Spacer(Modifier.height(12.dp))
+            Spacer(Modifier.height(16.dp))
+
+            apps.forEach { app ->
+                AppUsageRow(app)
+                Spacer(Modifier.height(12.dp))
+            }
         }
     }
 }
@@ -54,10 +68,14 @@ fun AppUsageRow(app: AppUsage) {
 
         Spacer(Modifier.width(12.dp))
 
+        val totalMinutes = (app.usageMillis / 60_000L).toFloat()
+        val displayText = formatDuration(app.usageMillis)
+        val progress = (totalMinutes / 60f).coerceIn(0f, 1f) // full bar at 60 minutes
+
         Column(modifier = Modifier.weight(1f)) {
             Text(app.appName, color = Color.White)
             LinearProgressIndicator(
-                progress = (app.usageMinutes / 60f).coerceIn(0f, 1f),
+                progress = progress,
                 color = Color(0xFF1E8CFF),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -68,7 +86,7 @@ fun AppUsageRow(app: AppUsage) {
 
         Spacer(Modifier.width(12.dp))
 
-        Text("${app.usageMinutes}m", color = Color.White)
+        Text(displayText, color = Color.White)
     }
 }
 
@@ -82,5 +100,17 @@ fun CircleAvatar(letter: String) {
         contentAlignment = Alignment.Center
     ) {
         Text(letter, color = Color.White, fontWeight = FontWeight.Bold)
+    }
+}
+
+private fun formatDuration(millis: Long): String {
+    val totalSeconds = millis / 1000
+    val minutes = totalSeconds / 60
+    val seconds = totalSeconds % 60
+
+    return if (minutes >= 1) {
+        "${minutes}m"
+    } else {
+        "${seconds} sec"
     }
 }

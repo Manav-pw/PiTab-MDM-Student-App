@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.data.auth.AuthPreferences
 import com.example.pitabmdmstudent.data.remote.api.AuthApi
+import com.example.pitabmdmstudent.data.remote.api.DeviceAuthApi
 import com.example.pitabmdmstudent.data.remote.api.StudentApi
 import com.example.pitabmdmstudent.data.remote.datasource.AuthDataSource
 import com.example.pitabmdmstudent.data.remote.datasource.AuthDataSourceImpl
@@ -140,5 +141,13 @@ object AppModule {
     fun provideAuthDataSource(
         api: AuthApi,
     ): AuthDataSource = AuthDataSourceImpl(api)
+
+    @Provides
+    @Singleton
+    fun provideDeviceAuthApi(
+        retrofit: Retrofit,
+    ): DeviceAuthApi {
+        return retrofit.create(DeviceAuthApi::class.java)
+    }
 
 }

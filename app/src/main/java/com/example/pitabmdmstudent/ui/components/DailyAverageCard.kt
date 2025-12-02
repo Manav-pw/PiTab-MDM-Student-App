@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,8 +21,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+data class DailyAverageBar(
+    val label: String,
+    val heightFraction: Float
+)
+
 @Composable
-fun DailyAverageCard() {
+fun DailyAverageCard(
+    averageMinutes: Int,
+    bars: List<DailyAverageBar>,
+) {
     Card(
         modifier = Modifier.padding(16.dp),
         shape = RoundedCornerShape(16.dp),
@@ -33,7 +42,7 @@ fun DailyAverageCard() {
             modifier = Modifier.padding(16.dp)
         ) {
             Text(
-                text = "0m",
+                text = "${averageMinutes}m",
                 color = Color.White,
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
@@ -50,14 +59,24 @@ fun DailyAverageCard() {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                // This is a simplified representation of the bar chart
-                Bar("S", 0.6f)
-                Bar("M", 0.4f)
-                Bar("T", 0.8f)
-                Bar("W", 0.5f)
-                Bar("T", 0.7f)
-                Bar("F", 0.3f)
-                Bar("S", 0.9f)
+                val safeBars = if (bars.isEmpty()) {
+                    // Fallback dummy bars when no data is available
+                    listOf(
+                        DailyAverageBar("S", 0f),
+                        DailyAverageBar("M", 0f),
+                        DailyAverageBar("T", 0f),
+                        DailyAverageBar("W", 0f),
+                        DailyAverageBar("T", 0f),
+                        DailyAverageBar("F", 0f),
+                        DailyAverageBar("S", 0f),
+                    )
+                } else {
+                    bars
+                }
+
+                safeBars.forEach { bar ->
+                    Bar(day = bar.label, heightFraction = bar.heightFraction)
+                }
             }
         }
     }

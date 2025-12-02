@@ -26,6 +26,11 @@ class AuthViewModel @Inject constructor(
 
     fun hasValidAccessToken(): Boolean = authRepository.hasValidAccessToken()
 
+    fun logout(onLoggedOut: () -> Unit) {
+        authRepository.clearSession()
+        onLoggedOut()
+    }
+
     fun requestOtp(phoneNumber: String, countryCode: String) {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, otpSent = false)
         viewModelScope.launch {
@@ -41,53 +46,68 @@ class AuthViewModel @Inject constructor(
     fun verifyOtp(
         phoneNumber: String,
         otp: String,
+        deviceOS: String,
+        machineId: String,
         onSuccess: () -> Unit,
-        onRequireName: () -> Unit,
     ) {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
             val token = authRepository.getToken(phoneNumber, otp)
-            if (token != null) {
-                _uiState.value = _uiState.value.copy(isLoading = false, requireName = false)
-                onSuccess()
-            } else {
-                // If token is null we assume user might not be registered yet.
+            if (token == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Login failed. Please check OTP and try again.",
+                )
+                return@launch
+            }
+
+            val deviceLogin = authRepository.loginDevice(
+                phoneNumber = phoneNumber,
+                deviceOS = deviceOS,
+                machineId = machineId,
+            )
+
+            if (deviceLogin == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Device login failed. Please try again.",
+                )
+                return@launch
+            }
+
+            val userName = deviceLogin.user?.name
+            if (userName.isNullOrBlank()) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     requireName = true,
-                    errorMessage = "User might not be registered. Please enter your name.",
                 )
-                onRequireName()
+            } else {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    requireName = false,
+                )
+                onSuccess()
             }
         }
     }
 
-    fun registerUser(
-        firstName: String,
-        phoneNumber: String,
-        countryCode: String,
-        otp: String,
+    fun updateDeviceName(
+        name: String,
         onSuccess: () -> Unit,
     ) {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
         viewModelScope.launch {
-            val registered = authRepository.registerUser(firstName, phoneNumber, countryCode)
-            if (registered != null) {
-                // After successful registration, attempt to get token again
-                val token = authRepository.getToken(phoneNumber, otp)
-                if (token != null) {
-                    _uiState.value = _uiState.value.copy(isLoading = false, requireName = false)
-                    onSuccess()
-                } else {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Registration successful but login failed. Please try again.",
-                    )
-                }
+            val success = authRepository.updateDeviceName(name)
+            if (success) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    requireName = false,
+                )
+                onSuccess()
             } else {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Registration failed. Please check details and try again.",
+                    errorMessage = "Failed to update name. Please try again.",
                 )
             }
         }
