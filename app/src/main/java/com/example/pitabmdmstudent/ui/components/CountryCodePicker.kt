@@ -13,11 +13,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -28,8 +29,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+// Dark Theme Colors
+private val DarkSurface = Color(0xFF1E2832)
+private val DarkSurfaceVariant = Color(0xFF2A3642)
+private val PrimaryAccent = Color(0xFF3388D7)
+private val TextPrimary = Color(0xFFFFFFFF)
+private val TextSecondary = Color(0xFFB0BEC5)
+private val TextMuted = Color(0xFF78909C)
+private val DividerColor = Color(0xFF2A3642)
 
 data class CountryCode(
     val name: String,
@@ -108,13 +121,30 @@ fun CountryCodePickerBottomSheet(
         }
     }
 
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = TextPrimary,
+        unfocusedTextColor = TextPrimary,
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        focusedBorderColor = PrimaryAccent,
+        unfocusedBorderColor = DarkSurfaceVariant,
+        focusedLabelColor = PrimaryAccent,
+        unfocusedLabelColor = TextMuted,
+        cursorColor = PrimaryAccent,
+        focusedPlaceholderColor = TextMuted,
+        unfocusedPlaceholderColor = TextMuted
+    )
+
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = {
                 searchQuery = ""
                 onDismiss()
             },
-            sheetState = sheetState
+            sheetState = sheetState,
+            containerColor = DarkSurface,
+            contentColor = TextPrimary,
+            scrimColor = Color.Black.copy(alpha = 0.5f)
         ) {
             Column(
                 modifier = Modifier
@@ -124,17 +154,27 @@ fun CountryCodePickerBottomSheet(
             ) {
                 Text(
                     text = "Select Country",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = TextStyle(
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = TextPrimary
+                    ),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("Search country...") },
+                    placeholder = { 
+                        Text(
+                            "Search country...",
+                            color = TextMuted
+                        ) 
+                    },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = textFieldColors
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -180,15 +220,20 @@ private fun CountryCodeItem(
         ) {
             Text(
                 text = country.name,
-                style = MaterialTheme.typography.bodyLarge
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = TextPrimary
+                )
             )
             Text(
                 text = country.code,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium
+                style = TextStyle(
+                    fontSize = 16.sp,
+                    color = PrimaryAccent,
+                    fontWeight = FontWeight.Medium
+                )
             )
         }
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+        HorizontalDivider(color = DividerColor)
     }
 }

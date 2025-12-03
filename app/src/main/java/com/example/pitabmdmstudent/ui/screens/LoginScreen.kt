@@ -1,5 +1,6 @@
 package com.example.pitabmdmstudent.ui.screens
 
+import android.app.Activity
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -31,8 +32,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -47,14 +48,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.pitabmdmstudent.R
@@ -65,6 +70,17 @@ import com.example.pitabmdmstudent.ui.components.CountryCode
 import com.example.pitabmdmstudent.ui.components.CountryCodePickerBottomSheet
 import kotlinx.coroutines.launch
 import kotlin.random.Random
+
+// Dark Theme Colors
+private val DarkBackground = Color(0xFF161E26)
+private val DarkSurface = Color(0xFF1E2832)
+private val DarkSurfaceVariant = Color(0xFF2A3642)
+private val PrimaryAccent = Color(0xFF3388D7)
+private val TextPrimary = Color(0xFFFFFFFF)
+private val TextSecondary = Color(0xFFB0BEC5)
+private val TextMuted = Color(0xFF78909C)
+private val ErrorColor = Color(0xFFEF5350)
+private val ShapeColor = Color(0xFF3388D7)
 
 // Data class for shape items in the background
 private data class ShapeItem(
@@ -105,7 +121,6 @@ private fun DecorativeBackground(
         }
     }
 
-    val shapeColor = MaterialTheme.colorScheme.onBackground
     val shapeSize = if (isLandscape) 48.dp else 56.dp
 
     Box(modifier = modifier) {
@@ -127,8 +142,8 @@ private fun DecorativeBackground(
                             modifier = Modifier
                                 .size(shapeSize)
                                 .rotate(shape.rotation)
-                                .alpha(0.12f),
-                            colorFilter = ColorFilter.tint(shapeColor)
+                                .alpha(0.15f),
+                            colorFilter = ColorFilter.tint(ShapeColor)
                         )
                     }
                 }
@@ -154,6 +169,20 @@ private fun LoginFormContent(
     onVerifyOtp: () -> Unit,
     onUpdateName: () -> Unit
 ) {
+    val textFieldColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = TextPrimary,
+        unfocusedTextColor = TextPrimary,
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        focusedBorderColor = PrimaryAccent,
+        unfocusedBorderColor = DarkSurfaceVariant,
+        focusedLabelColor = PrimaryAccent,
+        unfocusedLabelColor = TextMuted,
+        cursorColor = PrimaryAccent,
+        focusedPlaceholderColor = TextMuted,
+        unfocusedPlaceholderColor = TextMuted
+    )
+
     // Initial Login Form
     AnimatedVisibility(
         visible = !uiState.otpSent && !uiState.requireName,
@@ -163,15 +192,19 @@ private fun LoginFormContent(
         Column {
             Text(
                 text = "Welcome",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                style = TextStyle(
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
             )
 
             Text(
                 text = "Enter your phone number to continue",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                ),
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
             )
 
@@ -183,7 +216,7 @@ private fun LoginFormContent(
                 Surface(
                     onClick = onCountryPickerClick,
                     modifier = Modifier.height(56.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = DarkSurfaceVariant,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
@@ -192,14 +225,18 @@ private fun LoginFormContent(
                     ) {
                         Text(
                             text = selectedCountry.code,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = TextPrimary
+                            )
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
                             contentDescription = "Select Country",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = TextSecondary
                         )
                     }
                 }
@@ -211,11 +248,17 @@ private fun LoginFormContent(
                             onPhoneChange(it)
                         }
                     },
-                    placeholder = { Text("Phone Number") },
+                    placeholder = { 
+                        Text(
+                            "Phone Number",
+                            color = TextMuted
+                        ) 
+                    },
                     modifier = Modifier.weight(1f),
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    colors = textFieldColors
                 )
             }
 
@@ -229,20 +272,25 @@ private fun LoginFormContent(
                     .height(56.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
+                    containerColor = PrimaryAccent,
+                    contentColor = TextPrimary,
+                    disabledContainerColor = PrimaryAccent.copy(alpha = 0.4f),
+                    disabledContentColor = TextPrimary.copy(alpha = 0.6f)
                 )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = TextPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = "Send OTP",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
@@ -255,8 +303,8 @@ private fun LoginFormContent(
             uiState.errorMessage?.let { message ->
                 Text(
                     text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                    color = ErrorColor,
+                    style = TextStyle(fontSize = 12.sp),
                     modifier = Modifier.padding(top = 12.dp),
                     textAlign = TextAlign.Center
                 )
@@ -273,15 +321,19 @@ private fun LoginFormContent(
         Column {
             Text(
                 text = "Verify OTP",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                style = TextStyle(
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
             )
 
             Text(
                 text = "Enter the OTP sent to ${selectedCountry.code} $phoneState",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                ),
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
             )
 
@@ -292,12 +344,13 @@ private fun LoginFormContent(
                         onOtpChange(it)
                     }
                 },
-                label = { Text("OTP") },
-                placeholder = { Text("Enter 6-digit OTP") },
+                label = { Text("OTP", color = TextMuted) },
+                placeholder = { Text("Enter 6-digit OTP", color = TextMuted) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -308,19 +361,27 @@ private fun LoginFormContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryAccent,
+                    contentColor = TextPrimary,
+                    disabledContainerColor = PrimaryAccent.copy(alpha = 0.4f),
+                    disabledContentColor = TextPrimary.copy(alpha = 0.6f)
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = TextPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = "Verify OTP",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
@@ -333,8 +394,8 @@ private fun LoginFormContent(
             uiState.errorMessage?.let { message ->
                 Text(
                     text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                    color = ErrorColor,
+                    style = TextStyle(fontSize = 12.sp),
                     modifier = Modifier.padding(top = 12.dp),
                     textAlign = TextAlign.Center
                 )
@@ -351,26 +412,31 @@ private fun LoginFormContent(
         Column {
             Text(
                 text = "One Last Step",
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface
+                style = TextStyle(
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
             )
 
             Text(
                 text = "Enter your name to complete registration",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = TextStyle(
+                    fontSize = 14.sp,
+                    color = TextSecondary
+                ),
                 modifier = Modifier.padding(top = 4.dp, bottom = 24.dp)
             )
 
             OutlinedTextField(
                 value = nameState,
                 onValueChange = onNameChange,
-                label = { Text("Name") },
-                placeholder = { Text("Enter your name") },
+                label = { Text("Name", color = TextMuted) },
+                placeholder = { Text("Enter your name", color = TextMuted) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = textFieldColors
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -381,19 +447,27 @@ private fun LoginFormContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = PrimaryAccent,
+                    contentColor = TextPrimary,
+                    disabledContainerColor = PrimaryAccent.copy(alpha = 0.4f),
+                    disabledContentColor = TextPrimary.copy(alpha = 0.6f)
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = TextPrimary,
                         strokeWidth = 2.dp
                     )
                 } else {
                     Text(
                         text = "Continue",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold
+                        style = TextStyle(
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
@@ -406,8 +480,8 @@ private fun LoginFormContent(
             uiState.errorMessage?.let { message ->
                 Text(
                     text = message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
+                    color = ErrorColor,
+                    style = TextStyle(fontSize = 12.sp),
                     modifier = Modifier.padding(top = 12.dp),
                     textAlign = TextAlign.Center
                 )
@@ -436,11 +510,18 @@ fun LoginScreen(
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     val scrollState = rememberScrollState()
+    
+    // Set status bar to light icons (for dark background)
+    val activity = context as? Activity
+    activity?.let {
+        val window = it.window
+        WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+    }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(DarkBackground)
     ) {
         if (isLandscape) {
             // Landscape Layout - Side by side
@@ -465,16 +546,18 @@ fun LoginScreen(
                             painter = painterResource(id = R.drawable.ic_pifocus_logo),
                             contentDescription = "PiFocus Logo",
                             modifier = Modifier.size(100.dp),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                            colorFilter = ColorFilter.tint(PrimaryAccent)
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Text(
                             text = "PiFocus",
-                            style = MaterialTheme.typography.headlineLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            style = TextStyle(
+                                fontSize = 32.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
                         )
                     }
                 }
@@ -484,9 +567,8 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxSize()
                         .weight(1f),
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp),
-                    tonalElevation = 2.dp
+                    color = DarkSurface,
+                    shape = RoundedCornerShape(topStart = 32.dp, bottomStart = 32.dp)
                 ) {
                     Column(
                         modifier = Modifier
@@ -563,16 +645,18 @@ fun LoginScreen(
                             painter = painterResource(id = R.drawable.ic_pifocus_logo),
                             contentDescription = "PiFocus Logo",
                             modifier = Modifier.size(120.dp),
-                            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
+                            colorFilter = ColorFilter.tint(PrimaryAccent)
                         )
 
                         Spacer(modifier = Modifier.height(24.dp))
 
                         Text(
                             text = "PiFocus",
-                            style = MaterialTheme.typography.displaySmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
+                            style = TextStyle(
+                                fontSize = 36.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
                         )
                     }
                 }
@@ -582,9 +666,8 @@ fun LoginScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .weight(1f),
-                    color = MaterialTheme.colorScheme.surface,
-                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp),
-                    tonalElevation = 2.dp
+                    color = DarkSurface,
+                    shape = RoundedCornerShape(topStart = 32.dp, topEnd = 32.dp)
                 ) {
                     Column(
                         modifier = Modifier
