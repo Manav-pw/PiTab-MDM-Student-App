@@ -249,7 +249,7 @@ class SocketService : Service() {
 
 //                        getMediaProjection()
 
-                        val apps = AppUtils.getInstalledApps(applicationContext)
+                        val apps = AppUtils.getAllInstalledApps(applicationContext)
                         studentRepository.uploadInstalledApps(apps)
                         uploadDeviceState()
                     }

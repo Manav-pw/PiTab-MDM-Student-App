@@ -227,6 +227,8 @@ object AppUsageUtils {
         // Convert → AppUsageDetails
         val launcherApps = getLauncherApps(context)
 
+        Log.d("LauncherApps","$launcherApps")
+
         return usageMap
             .filterKeys { it !in launcherApps }
             .map { (pkg, ms) ->
