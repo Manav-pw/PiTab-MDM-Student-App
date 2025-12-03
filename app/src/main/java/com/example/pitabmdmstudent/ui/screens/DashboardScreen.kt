@@ -28,7 +28,10 @@ import com.example.pitabmdmstudent.ui.components.TopBar
 import com.example.pitabmdmstudent.data.viewmodel.DashboardViewModel
 import com.example.pitabmdmstudent.data.remote.viewModel.StudentViewModel
 import com.example.pitabmdmstudent.data.remote.viewModel.AuthViewModel
+import java.time.LocalDate
+import java.time.format.TextStyle
 import java.util.Base64
+import java.util.Locale
 
 private enum class RangeFilter { DAY, WEEK }
 
@@ -44,7 +47,42 @@ fun DashboardScreen(
     val totalToday by dashboardVm.totalTodayFlow.collectAsState()
     val totalWeek by dashboardVm.totalWeekFlow.collectAsState()
 
-    LaunchedEffect(Unit) {
+    val today = LocalDate.now()
+    val todayUsageMillis: Long = weeklyUsage[today.toString()]?.values?.sum() ?: 0L
+
+    val dailyBar = DailyAverageBar(
+        label = today.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.ENGLISH).first().toString(),
+        heightFraction = 1f // single bar full height
+    )
+
+    val appListToday: List<AppUsage> = weeklyUsage[today.toString()]?.map { (pkg, millis) ->
+        AppUsage(pkg.substringAfterLast('.'), millis)
+    }?.sortedByDescending { it.usageMillis } ?: emptyList()
+
+    val weeklyTotalsPerDay = dashboardVm.getWeeklyTotalsPerDay(weeklyUsage)
+
+    val maxMillis = weeklyTotalsPerDay.values.maxOrNull()?.coerceAtLeast(1L) ?: 1L
+    val weeklyBars = weeklyTotalsPerDay.map { (day, totalMillis) ->
+        DailyAverageBar(
+            label = day.first().toString(),
+            heightFraction = (totalMillis.toFloat() / maxMillis.toFloat()).coerceIn(0f, 1f)
+        )
+    }
+
+// All apps aggregated across week
+    val allAppsWeekly: List<AppUsage> = weeklyUsage
+        .flatMap { (_, perApp) -> perApp.entries }
+        .groupBy({ it.key }, { it.value })
+        .mapValues { (_, values) -> values.sum() }
+        .entries
+        .sortedByDescending { it.value }
+        .map { (pkg, millis) -> AppUsage(pkg.substringAfterLast('.'), millis) }
+
+    val (rangeFilter, setRangeFilter) = remember { mutableStateOf(RangeFilter.WEEK) }
+
+
+    LaunchedEffect(rangeFilter) {
+        Log.d("Dashboard", "updated values")
         dashboardVm.loadTodayUsage()
         dashboardVm.loadWeeklyUsage()
     }
@@ -55,9 +93,10 @@ fun DashboardScreen(
         Log.d("DashboardScreen", "Weekly Usage: $weeklyUsage")
         Log.d("DashboardScreen", "Total Today: $totalToday")
         Log.d("DashboardScreen", "Total Week: $totalWeek")
+        Log.d("DashboardScreen", "TodayUsageMillis: $todayUsageMillis")
+
     }
 
-    val (rangeFilter, setRangeFilter) = remember { mutableStateOf(RangeFilter.WEEK) }
 
     val rangeLabel = when (rangeFilter) {
         RangeFilter.DAY -> "Today"
@@ -74,14 +113,14 @@ fun DashboardScreen(
     val appTotalsForRange: Map<String, Long> =
         if (rangeFilter == RangeFilter.DAY) todayUsage else weeklyTotalsByApp
 
-    val allAppsList: List<AppUsage> = appTotalsForRange.entries
-        .sortedByDescending { it.value }
-        .map { (pkg, millis) ->
-            AppUsage(
-                appName = pkg.substringAfterLast('.'),
-                usageMillis = millis
-            )
-        }
+//    val allAppsList: List<AppUsage> = appTotalsForRange.entries
+//        .sortedByDescending { it.value }
+//        .map { (pkg, millis) ->
+//            AppUsage(
+//                appName = pkg.substringAfterLast('.'),
+//                usageMillis = millis
+//            )
+//        }
 
     val mostUsedEntry = appTotalsForRange.maxByOrNull { it.value }
     val mostUsedAppName = mostUsedEntry?.key?.substringAfterLast('.')
@@ -91,37 +130,21 @@ fun DashboardScreen(
     val totalWeekMillis = totalWeek
     val totalMillisForRange = if (rangeFilter == RangeFilter.DAY) totalDayMillis else totalWeekMillis
 
-    // Build bar data for the chart (daily or weekly)
-    val (bars, averageMinutes) =
-        if (rangeFilter == RangeFilter.DAY) {
-            val minutes = (totalDayMillis / 60_000L).toInt()
-            val bar = DailyAverageBar(
-                label = "T",
-                heightFraction = 1f
+    val (bars, allAppsList, averageMinutes) =
+        remember(todayUsageMillis, weeklyUsage, totalToday, totalWeek, rangeFilter) {
+            if (rangeFilter == RangeFilter.DAY) {
+            Triple(
+                listOf(dailyBar),
+                appListToday,
+                (todayUsageMillis / 60_000L).toInt()
             )
-            listOf(bar) to minutes
-        } else {
-            val orderedDays = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-            val perDayTotalMinutes: List<Pair<String, Int>> = orderedDays.map { day ->
-                val millis = weeklyUsage[day]?.values?.sum() ?: 0L
-                val minutes = (millis / 60_000L).toInt()
-                day to minutes
-            }
-
-            val maxMinutesInWeek =
-                perDayTotalMinutes.maxOfOrNull { it.second }?.coerceAtLeast(1) ?: 1
-            val weeklyBars: List<DailyAverageBar> = perDayTotalMinutes.map { (label, minutes) ->
-                DailyAverageBar(
-                    label = label.first().toString(),
-                    heightFraction = (minutes.toFloat() / maxMinutesInWeek).coerceIn(0f, 1f)
+            } else {
+                Triple(
+                    weeklyBars,
+                    allAppsWeekly,
+                    (weeklyTotalsPerDay.values.sum() / 60_000L / 7).toInt()
                 )
             }
-
-            val avgMinutes =
-                if (perDayTotalMinutes.isNotEmpty()) perDayTotalMinutes.sumOf { it.second } / perDayTotalMinutes.size
-                else 0
-
-            weeklyBars to avgMinutes
         }
 
     Column(

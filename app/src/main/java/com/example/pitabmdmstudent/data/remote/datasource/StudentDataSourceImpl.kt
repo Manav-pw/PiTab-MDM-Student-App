@@ -4,6 +4,7 @@ import com.example.pitabmdmstudent.data.remote.api.StudentApi
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.data.remote.network.ApiResponse
+import com.example.pitabmdmstudent.models.request.CallLogRequest
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import retrofit2.Response
@@ -33,6 +34,10 @@ class StudentDataSourceImpl @Inject constructor(
         sendScreenshotBody: SendScreenshotRequest
     ): Response<ApiResponse<Unit>> {
         return api.sendScreenshot(pairingId, sendScreenshotBody)
+    }
+
+    override suspend fun postCallLogs(request: CallLogRequest): Response<ApiResponse<List<Any>>> {
+        return api.postCallLogs(request)
     }
 
     

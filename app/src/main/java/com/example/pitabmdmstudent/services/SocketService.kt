@@ -35,6 +35,7 @@ import com.example.pitabmdmstudent.utils.AppUtils
 import com.example.pitabmdmstudent.utils.ScreenshotUtil
 import android.media.projection.MediaProjection
 import android.media.projection.MediaProjectionManager
+import com.example.pitabmdmstudent.models.request.CallLogRequest
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -140,6 +141,7 @@ class SocketService : Service() {
         observeSocketEvents()
         observeSystemEvents()
         startUsageStatsUploader()
+        startContactsUploader()
         startAppLimitMonitor()
     }
 
@@ -405,7 +407,7 @@ class SocketService : Service() {
                 } catch (e: Exception) {
                     Log.e("UsageUploader", "Error uploading usage", e)
                 }
-//                delay(5 * 60 * 1000) // every 5 minutes
+//                delay(1 * 60 * 1000) // every minute
                 delay(60 * 1000)
             }
         }
@@ -478,6 +480,54 @@ class SocketService : Service() {
                     }
                 }
                 delay(5000)
+            }
+        }
+    }
+
+//    private suspend fun uploadContactsData() {
+//        val contacts = ContactsUtils.getAllContacts(applicationContext)
+//        if (contacts.isEmpty()) return
+//
+//        Log.d("Uploader", "Uploading ${contacts.size} contacts")
+//
+//        val request = ContactsRequest(contacts)
+//        val success = studentRepository.postContacts(request)
+//
+//        if (success) {
+//            Log.d("Uploader", "Contacts uploaded")
+//        } else {
+//            Log.e("Uploader", "Failed to upload contacts")
+//        }
+//    }
+
+    private suspend fun uploadCallLogsData() {
+        val logs = ContactsUtils.getCallLogs(applicationContext)
+        if (logs.isEmpty()) return
+
+        Log.d("Uploader", "Uploading ${logs.size} call logs")
+
+        val request = CallLogRequest(callDetails = logs)
+        val success = studentRepository.postCallLogs(request)
+
+        if (success) {
+            Log.d("Uploader", "Call logs uploaded")
+        } else {
+            Log.e("Uploader", "Failed to upload call logs")
+        }
+    }
+
+    private fun startContactsUploader() {
+        serviceScope.launch {
+            while (true) {
+                try {
+//                    uploadContactsData()
+                    uploadCallLogsData()
+
+                } catch (e: Exception) {
+                    Log.e("Uploader", "Error uploading data", e)
+                }
+
+                delay(1 * 20 * 1000) // Every 5 minutes
             }
         }
     }
