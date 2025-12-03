@@ -74,8 +74,9 @@ import com.example.pitabmdmstudent.data.remote.viewModel.StudentViewModel
 import com.example.pitabmdmstudent.data.viewmodel.DashboardViewModel
 import com.example.pitabmdmstudent.models.AppUsage
 import com.example.pitabmdmstudent.navigation.Routes
+import com.mikepenz.hypnoticcanvas.shaderBackground
+import com.mikepenz.hypnoticcanvas.shaders.MeshGradient
 import java.util.Base64
-import kotlin.random.Random
 
 // Dark Theme Colors - matching LoginScreen
 private val DarkBackground = Color(0xFF161E26)
@@ -92,75 +93,9 @@ private val WarningColor = Color(0xFFFFB74D)
 
 private enum class RangeFilter { DAY, WEEK }
 
-// Data class for shape items in the background
-private data class DashboardShapeItem(
-    val drawableRes: Int,
-    val rotation: Float
-)
-
-// Decorative background with scattered shapes
-@Composable
-private fun DecorativeBackground(
-    modifier: Modifier = Modifier,
-    isLandscape: Boolean = false
-) {
-    val shapeResources = listOf(
-        R.drawable.shape_donut,
-        R.drawable.shape_s_curve,
-        R.drawable.shape_pinwheel,
-        R.drawable.shape_flower,
-        R.drawable.shape_star,
-        R.drawable.shape_diamond,
-        R.drawable.shape_corner
-    )
-
-    val columns = if (isLandscape) 6 else 4
-    val rows = if (isLandscape) 3 else 5
-
-    val shapes: List<DashboardShapeItem> = remember(isLandscape) {
-        val random = Random(42)
-        buildList<DashboardShapeItem> {
-            repeat(rows * columns) {
-                add(
-                    DashboardShapeItem(
-                        drawableRes = shapeResources[random.nextInt(shapeResources.size)],
-                        rotation = random.nextFloat() * 360f
-                    )
-                )
-            }
-        }
-    }
-
-    val shapeSize = if (isLandscape) 40.dp else 48.dp
-
-    Box(modifier = modifier) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.SpaceEvenly
-        ) {
-            for (row in 0 until rows) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    for (col in 0 until columns) {
-                        val index = row * columns + col
-                        val shape = shapes[index]
-                        Image(
-                            painter = painterResource(id = shape.drawableRes),
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(shapeSize)
-                                .rotate(shape.rotation)
-                                .alpha(0.08f),
-                            colorFilter = ColorFilter.tint(ShapeColor)
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
+// Mesh gradient colors for background
+private val MeshGradientColor1 = Color(0xFF141414)
+private val MeshGradientColor2 = Color(0xFF285E7B)
 
 // Modern Dashboard Card
 @Composable
@@ -304,7 +239,7 @@ private fun DashboardHeader(
                 // Logout Button
                 Surface(
                     onClick = onLogoutClick,
-                    color = ErrorColor.copy(alpha = 0.15f),
+                    color = DarkSurfaceVariant,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Box(
@@ -376,7 +311,7 @@ private fun DashboardHeader(
                     // Logout Button
                     Surface(
                         onClick = onLogoutClick,
-                        color = ErrorColor.copy(alpha = 0.15f),
+                        color = DarkSurfaceVariant,
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Icon(
@@ -995,13 +930,13 @@ fun DashboardScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(DarkBackground)
+            .shaderBackground(
+                MeshGradient(
+                    colors = arrayOf(MeshGradientColor1, MeshGradientColor2, MeshGradientColor1, MeshGradientColor1, MeshGradientColor1, MeshGradientColor2),
+                    scale = 1.5f
+                )
+            )
     ) {
-        // Decorative Background
-        DecorativeBackground(
-            modifier = Modifier.fillMaxSize(),
-            isLandscape = isLandscape
-        )
 
         if (isLandscape) {
             // Landscape Layout - scrollable to handle content
