@@ -94,4 +94,7 @@ dependencies {
 
     // QR code generator
     implementation("com.google.zxing:core:3.5.4")
+
+    // HypnoticCanvas - Mesh Gradient
+    implementation("com.mikepenz.hypnoticcanvas:hypnoticcanvas:0.4.1")
 }
