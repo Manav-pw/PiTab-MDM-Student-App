@@ -17,9 +17,18 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val REQUIRED_PERMISSIONS = arrayOf(
+        Manifest.permission.READ_CONTACTS,
+        Manifest.permission.READ_CALL_LOG
+    )
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        requestNotificationPermission()
+        requestContactAndCallLogPermissions()
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
@@ -40,6 +49,26 @@ class MainActivity : ComponentActivity() {
                     NavGraph()
                 }
             }
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1000)
+            }
+        }
+    }
+
+    private fun requestContactAndCallLogPermissions() {
+        val denied = REQUIRED_PERMISSIONS.filter {
+            checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
+        }
+
+        if (denied.isNotEmpty()) {
+            requestPermissions(denied.toTypedArray(), 2000)
         }
     }
 }

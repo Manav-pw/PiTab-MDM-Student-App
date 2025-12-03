@@ -4,6 +4,7 @@ import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
 import com.example.pitabmdmstudent.data.remote.network.ApiResponse
+import com.example.pitabmdmstudent.models.request.CallLogRequest
 import com.example.pitabmdmstudent.models.request.DeviceStateRequest
 import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
 import retrofit2.Response
@@ -36,5 +37,12 @@ interface StudentApi {
         @Path("pairingId") pairingId: String,
         @Body sendScreenshotBody: SendScreenshotRequest
     ): Response<ApiResponse<Unit>>
+
+    @POST("mdm/app-management/call-history")
+    suspend fun postCallLogs(
+        @Body request: CallLogRequest
+    ): Response<ApiResponse<List<Any>>>
+
+
 
 }

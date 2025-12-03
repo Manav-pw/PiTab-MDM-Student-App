@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.repository.DashboardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -26,6 +29,20 @@ class DashboardViewModel @Inject constructor(
     fun loadWeeklyUsage() {
         viewModelScope.launch {
             repository.loadWeeklyUsage()
+        }
+    }
+
+    fun getWeeklyTotalsPerDay(weeklyUsage: Map<String, Map<String, Long>>): Map<String, Long> {
+        val orderedDays = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+
+        return orderedDays.associateWith { day ->
+            val usageForDate = weeklyUsage.entries.find { (date, _) ->
+                val dayOfWeek = LocalDate.parse(date).dayOfWeek.getDisplayName(TextStyle.SHORT,
+                    Locale.ENGLISH)
+                dayOfWeek == day
+            }?.value
+
+            usageForDate?.values?.sum() ?: 0L
         }
     }
 }
