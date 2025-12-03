@@ -12,7 +12,9 @@ import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.util.Log
 import androidx.core.content.edit
 import com.example.pitabmdmstudent.ui.activity.MainActivity
@@ -31,6 +33,8 @@ import com.example.pitabmdmstudent.socket.SocketIOConnection
 import com.example.pitabmdmstudent.utils.AppUsageUtils
 import com.example.pitabmdmstudent.utils.AppUtils
 import com.example.pitabmdmstudent.utils.ScreenshotUtil
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,8 +108,8 @@ class SocketService : Service() {
         createNotificationChannel()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             startForeground(
-                NOTIFICATION_ID, 
-                createNotification("Connecting…"), 
+                NOTIFICATION_ID,
+                createNotification("Connecting…"),
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
             )
         } else {
@@ -114,13 +118,17 @@ class SocketService : Service() {
 
         socket.initializeCommunication()
 
-        if (MediaProjectionHolder.mediaProjection == null) {
-            val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            startActivity(intent)
-        } else {
-            ScreenshotUtil.setupScreenCapture(applicationContext)
-        }
+        getMediaProjection()
+
+//        if (MediaProjectionHolder.mediaProjection == null) {
+//            val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
+//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+//            startActivity(intent)
+//        } else {
+//            ScreenshotUtil.setupScreenCapture(applicationContext)
+//        }
+
+
 
         registerReceiver(
             BatteryReceiver(),
@@ -135,52 +143,96 @@ class SocketService : Service() {
         startAppLimitMonitor()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_PERMISSION_GRANTED) {
-             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                try {
-                    startForeground(
-                        NOTIFICATION_ID, 
-                        createNotification("Screen Capture Ready"), 
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-                    )
+            Log.d("SocketService", "Received ACTION_PERMISSION_GRANTED")
 
-                    // Now that we are a MediaProjection foreground service, we can get the token
-                    val resultCode = MediaProjectionHolder.resultCode
-                    val data = MediaProjectionHolder.data
-                    if (resultCode != 0 && data != null) {
-                        val projectionManager = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as android.media.projection.MediaProjectionManager
-                        val mp = projectionManager.getMediaProjection(resultCode, data)
-                        MediaProjectionHolder.mediaProjection = mp
-
-                        mp?.registerCallback(object : android.media.projection.MediaProjection.Callback(){
-                            override fun onStop() {
-                                Log.d("ScreenPerm", "MediaProjection stopped by system")
-                                MediaProjectionHolder.reset()
-                            }
-                        }, android.os.Handler(android.os.Looper.getMainLooper()))
-                        MediaProjectionHolder.callbackRegistered = true
-
-                        ScreenshotUtil.setupScreenCapture(applicationContext)
-                        Log.d("SocketService", "MediaProjection initialized successfully")
-                    }
-                } catch (e: Exception) {
-                    Log.e("SocketService", "Failed to start MediaProjection foreground service", e)
-                }
-            } else if (MediaProjectionHolder.isReady()) {
-                // Pre-Q (should rarely happen for this requirement logic, but good fallback)
-                ScreenshotUtil.setupScreenCapture(applicationContext)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // Upgrade this service to also be a mediaProjection FGS.
+                startForeground(
+                    NOTIFICATION_ID,
+                    createNotification("Screen capture ready"),
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
+                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
+                )
             }
+
+            setupMediaProjectionFromHolder()
         }
-        return super.onStartCommand(intent, flags, startId)
+
+        return START_STICKY
     }
+
+    override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
         super.onDestroy()
         socket.disconnect()
         job.cancel()
+    }
+
+    private fun getMediaProjection() {
+        if (MediaProjectionHolder.mediaProjection == null) {
+            Log.d("MediaProjection","null")
+            val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } else {
+            Log.d("MediaProjection","not null")
+            ScreenshotUtil.setupScreenCapture(applicationContext)
+        }
+    }
+
+    private fun setupMediaProjectionFromHolder() {
+        // If we already have a MediaProjection, just ensure screenshot
+        // capture is configured.
+        MediaProjectionHolder.mediaProjection?.let {
+            Log.d("MediaProjection", "MediaProjection already available")
+            ScreenshotUtil.setupScreenCapture(applicationContext)
+            return
+        }
+
+        val data = MediaProjectionHolder.data
+        val resultCode = MediaProjectionHolder.resultCode
+
+        if (data == null) {
+            Log.e("MediaProjection", "No data in MediaProjectionHolder; cannot set up projection")
+            return
+        }
+
+        val projectionManager =
+            getSystemService(MediaProjectionManager::class.java) ?: run {
+                Log.e("MediaProjection", "Failed to obtain MediaProjectionManager")
+                return
+            }
+
+        val mp: MediaProjection? = try {
+            projectionManager.getMediaProjection(resultCode, data)
+        } catch (e: SecurityException) {
+            Log.e("MediaProjection", "SecurityException while getting MediaProjection", e)
+            null
+        }
+
+        MediaProjectionHolder.mediaProjection = mp
+
+        if (mp != null) {
+            Log.d("MediaProjection", "MediaProjection obtained in service: $mp")
+
+            if (!MediaProjectionHolder.callbackRegistered) {
+                mp.registerCallback(object : MediaProjection.Callback() {
+                    override fun onStop() {
+                        Log.d("ScreenPerm", "MediaProjection stopped by system")
+                        MediaProjectionHolder.reset()
+                    }
+                }, Handler(Looper.getMainLooper()))
+
+                MediaProjectionHolder.callbackRegistered = true
+            }
+
+            ScreenshotUtil.setupScreenCapture(applicationContext)
+        } else {
+            Log.e("MediaProjection", "Failed to obtain MediaProjection in service")
+        }
     }
 
     // ---------------------------------------
@@ -195,7 +247,9 @@ class SocketService : Service() {
                     is SocketEvent.Connected -> {
                         updateNotification("Connected")
 
-                        val apps = AppUtils.getInstalledApps(applicationContext)
+//                        getMediaProjection()
+
+                        val apps = AppUtils.getAllInstalledApps(applicationContext)
                         studentRepository.uploadInstalledApps(apps)
                         uploadDeviceState()
                     }

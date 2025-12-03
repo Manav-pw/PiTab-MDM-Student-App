@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 class BatteryReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(Dispatchers.IO).launch {
             AppEventBus.emit(AppEventBus.DeviceEvent.ChargingStateChanged)
         }
     }

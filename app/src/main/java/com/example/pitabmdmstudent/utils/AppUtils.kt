@@ -9,26 +9,46 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.LauncherActivityInfo
 import android.content.pm.LauncherApps
+import android.content.pm.PackageManager
 import android.os.BatteryManager
 import android.os.UserManager
+import android.util.Log
 import com.example.pitabmdmstudent.models.request.AppInfoRequest
 
 object AppUtils {
-    fun getInstalledApps(context: Context): List<AppInfoRequest> {
-        val launcherApps = context.getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
-        val unfilteredList: MutableList<LauncherActivityInfo> = java.util.ArrayList()
+//    fun getInstalledApps(context: Context): List<AppInfoRequest> {
+//        val launcherApps = context.getSystemService(LAUNCHER_APPS_SERVICE) as LauncherApps
+//        val unfilteredList: MutableList<LauncherActivityInfo> = java.util.ArrayList()
+//
+//        val userManager = context.getSystemService(USER_SERVICE) as UserManager
+//        val userHandles = userManager.userProfiles
+//
+//        for (handle in userHandles) {
+//            unfilteredList.addAll(launcherApps.getActivityList(null, handle))
+//        }
+//
+//        var appList = unfilteredList.map {
+//            AppInfoRequest(
+//                appName = it.label.toString(),
+//                packageName = it.applicationInfo.packageName,
+//            )
+//        }
+//
+//        Log.d("APP_LIST","$appList")
+//
+//        return appList
+//    }
 
-        val userManager = context.getSystemService(USER_SERVICE) as UserManager
-        val userHandles = userManager.userProfiles
+    fun getAllInstalledApps(context: Context): List<AppInfoRequest> {
+        val pm = context.packageManager
 
-        for (handle in userHandles) {
-            unfilteredList.addAll(launcherApps.getActivityList(null, handle))
-        }
+        val apps = pm.getInstalledApplications(PackageManager.GET_META_DATA)
 
-        return unfilteredList.map {
+        Log.d("APP_LIST","$apps")
+        return apps.map {
             AppInfoRequest(
-                appName = it.label.toString(),
-                packageName = it.applicationInfo.packageName,
+                appName = pm.getApplicationLabel(it).toString(),
+                packageName = it.packageName
             )
         }
     }
