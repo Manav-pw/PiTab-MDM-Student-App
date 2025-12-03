@@ -95,7 +95,7 @@ private enum class RangeFilter { DAY, WEEK }
 
 // Mesh gradient colors for background
 private val MeshGradientColor1 = Color(0xFF141414)
-private val MeshGradientColor2 = Color(0xFF285E7B)
+private val MeshGradientColor2 = Color(0xFF1B2E40)
 
 // Modern Dashboard Card
 @Composable
