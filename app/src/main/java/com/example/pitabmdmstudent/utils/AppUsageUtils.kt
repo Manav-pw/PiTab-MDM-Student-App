@@ -256,61 +256,59 @@ object AppUsageUtils {
         startTime: Long,
         endTime: Long
     ): Map<String, Long> {
-        val events = usageStatsManager.queryEvents(startTime, endTime)
-        val usageMap = mutableMapOf<String, Long>()
-        val sessionMap = mutableMapOf<String, Long>()
-        val activeApps = mutableSetOf<String>()
 
-        val excludedPackages = setOf(
-            "com.android.permissioncontroller",
-            "com.android.systemui",
-            "com.android.settings",
-            "co.penpencil.launcher"
-        )
+        val events = usageStatsManager.queryEvents(startTime, endTime)
+        val event = UsageEvents.Event()
+
+        val sessions = mutableMapOf<String, Long>()   // last start timestamp
+        val usage = mutableMapOf<String, Long>()      // total ms
 
         while (events.hasNextEvent()) {
-            val event = UsageEvents.Event()
             events.getNextEvent(event)
 
             val pkg = event.packageName ?: continue
-            if (pkg in excludedPackages) continue
 
             when (event.eventType) {
-                UsageEvents.Event.ACTIVITY_RESUMED,
-                UsageEvents.Event.MOVE_TO_FOREGROUND -> {
-                    if (!activeApps.contains(pkg)) {
-                        sessionMap[pkg] = event.timeStamp
-                        activeApps.add(pkg)
-                    }
+
+                // app moved to foreground
+                UsageEvents.Event.MOVE_TO_FOREGROUND,
+                UsageEvents.Event.ACTIVITY_RESUMED -> {
+                    sessions[pkg] = event.timeStamp
                 }
 
+                // app moved to background
+                UsageEvents.Event.MOVE_TO_BACKGROUND,
                 UsageEvents.Event.ACTIVITY_PAUSED,
-                UsageEvents.Event.ACTIVITY_STOPPED,
-                UsageEvents.Event.MOVE_TO_BACKGROUND -> {
-                    if (activeApps.contains(pkg)) {
-                        val sessionStart = sessionMap[pkg] ?: continue
-                        val durationMs = event.timeStamp - sessionStart
-                        val durationSec = durationMs / 1000
+                UsageEvents.Event.ACTIVITY_STOPPED -> {
 
-                        if (durationSec > 0) {
-                            usageMap[pkg] = (usageMap[pkg] ?: 0L) + durationSec
-                        }
-                        activeApps.remove(pkg)
+                    val start = sessions.remove(pkg) ?: continue
+                    val duration = event.timeStamp - start
+                    if (duration > 0) {
+                        usage[pkg] = (usage[pkg] ?: 0) + duration
                     }
+                }
+
+                // close last open apps when screen turns off
+                UsageEvents.Event.SCREEN_NON_INTERACTIVE -> {
+                    for ((p, start) in sessions) {
+                        val duration = event.timeStamp - start
+                        if (duration > 0) {
+                            usage[p] = (usage[p] ?: 0) + duration
+                        }
+                    }
+                    sessions.clear()
                 }
             }
         }
 
-        for (pkg in activeApps) {
-            val sessionStart = sessionMap[pkg] ?: continue
-            val durationMs = endTime - sessionStart
-            val durationSec = durationMs / 1000
-
-            if (durationSec > 0) {
-                usageMap[pkg] = (usageMap[pkg] ?: 0L) + durationSec
+        // Handle apps still open at endTime
+        for ((pkg, start) in sessions) {
+            val duration = endTime - start
+            if (duration > 0) {
+                usage[pkg] = (usage[pkg] ?: 0) + duration
             }
         }
 
-        return usageMap
+        return usage
     }
 }

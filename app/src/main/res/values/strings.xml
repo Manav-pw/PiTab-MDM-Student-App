@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">PiTab MDM Student</string>
+    <string name="app_name">pifocus Student</string>
     <string name="accessibility_service_description">
         PiTab MDM requires accessibility access to monitor foreground apps and enforce blocking policies.
     </string>

@@ -37,7 +37,7 @@ class AuthViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, otpSent = false)
         viewModelScope.launch {
             val success = authRepository.requestOtp(phoneNumber, countryCode)
-            Log.d("OTP","done")
+            Log.d("OTP","done $_uiState.value")
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
                 otpSent = success,

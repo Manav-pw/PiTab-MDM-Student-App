@@ -291,7 +291,7 @@ private fun LoginFormContent(
 
             Button(
                 onClick = onVerifyOtp,
-                enabled = !uiState.isLoading && otpState.length == 6,
+                enabled = !uiState.isLoading && otpState.length == 4,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
