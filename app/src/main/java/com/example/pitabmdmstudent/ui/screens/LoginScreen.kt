@@ -526,6 +526,11 @@ fun LoginScreen(
                                 viewModel.requestOtp(
                                     phoneNumber = phoneState,
                                     countryCode = selectedCountry.code,
+                                    onSuccessDev = {
+                                        navController.navigate(Routes.Splash.route) {
+                                            popUpTo(Routes.Permission.route) { inclusive = true }
+                                        }
+                                    }
                                 )
                             },
                             onVerifyOtp = {
@@ -620,6 +625,11 @@ fun LoginScreen(
                                 viewModel.requestOtp(
                                     phoneNumber = phoneState,
                                     countryCode = selectedCountry.code,
+                                    onSuccessDev = {
+                                        navController.navigate(Routes.Splash.route) {
+                                            popUpTo(Routes.Permission.route) { inclusive = true }
+                                        }
+                                    }
                                 )
                             },
                             onVerifyOtp = {

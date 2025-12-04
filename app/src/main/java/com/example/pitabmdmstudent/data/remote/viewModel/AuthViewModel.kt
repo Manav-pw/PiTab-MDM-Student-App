@@ -4,6 +4,8 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.remote.repository.AuthRepository
+import com.example.pitabmdmstudent.models.auth.GetTokenDto
+import com.example.pitabmdmstudent.models.auth.UserData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,6 +27,8 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState
 
+    private val DEV_PHONE = "9999999999"
+
     fun hasValidAccessToken(): Boolean = authRepository.hasValidAccessToken()
 
     fun logout(onLoggedOut: () -> Unit) {
@@ -32,8 +36,62 @@ class AuthViewModel @Inject constructor(
         onLoggedOut()
     }
 
-    fun requestOtp(phoneNumber: String, countryCode: String) {
-        Log.d("OTP","request")
+    private fun runDevBypassLogic(onSuccess: () -> Unit) {
+        val devToken = GetTokenDto(
+            access_token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUzODMyMzMuMTUsImRhdGEiOnsiX2lkIjoiNjkxNWNmYzU1MDc4MTcwMTZjN2JkYTU2IiwidXNlcm5hbWUiOiI5NTI4OTAzNDMxIiwiZmlyc3ROYW1lIjoiIiwibGFzdE5hbWUiOiIiLCJvcmdhbml6YXRpb24iOnsiX2lkIjoiNjU5M2I0YTllNjc4MjgwMDE4NzQyYzRjIiwid2Vic2l0ZSI6ImxlYXJub3MubGl2ZSIsIm5hbWUiOiJsZWFybi1vcyJ9LCJyb2xlcyI6WyI1YjI3YmQ5NjU4NDJmOTUwYTc3OGM2ZWYiXSwiY291bnRyeUdyb3VwIjoiSU4iLCJvbmVSb2xlcyI6W10sInR5cGUiOiJVU0VSIn0sImlhdCI6MTc2NDc3ODQzM30.5FaN7zTBbxhZUHZrwWs8LZv90VI-BbF0MWiZpWx7FmY",
+            refresh_token="8e5a2547b0aa818a9f150328950d72c33630edf9c53163d4cd86bae6b3ee948d",
+            expires_in=1765383233150,
+            tokenId="693061c10d02b1a7201af624",
+            user= UserData(
+                id="6915cfc5507817016c7bda56",
+                firstName="Param"
+            )
+        )
+
+        viewModelScope.launch {
+            authRepository.saveToken(devToken)
+
+            val deviceLogin = authRepository.loginDevice(
+                phoneNumber = "9528903431",
+                deviceOS = "android",
+                machineId = "9528903431",
+            )
+
+            if (deviceLogin == null) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Device login failed. Please try again.",
+                )
+                return@launch
+            }
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                requireName = false
+            )
+
+            onSuccess()
+        }
+    }
+
+    fun requestOtp(phoneNumber: String, countryCode: String, onSuccessDev: () -> Unit) {
+
+        // 🔥 Developer Backdoor: Skip OTP request API
+        if (phoneNumber == DEV_PHONE) {
+            Log.d("OTP", "DEV MODE: OTP skipped")
+
+            runDevBypassLogic(onSuccessDev)
+
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                otpSent = true,
+                errorMessage = null
+            )
+
+            return
+        }
+
+
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, otpSent = false)
         viewModelScope.launch {
             val success = authRepository.requestOtp(phoneNumber, countryCode)
@@ -54,7 +112,10 @@ class AuthViewModel @Inject constructor(
         onSuccess: () -> Unit,
     ) {
         _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
         viewModelScope.launch {
+
+            // Step 1: Verify OTP → Get token
             val token = authRepository.getToken(phoneNumber, otp)
             if (token == null) {
                 _uiState.value = _uiState.value.copy(
@@ -64,6 +125,10 @@ class AuthViewModel @Inject constructor(
                 return@launch
             }
 
+            // Step 2: Save token
+            authRepository.saveToken(token)
+
+            // Step 3: Device login
             val deviceLogin = authRepository.loginDevice(
                 phoneNumber = phoneNumber,
                 deviceOS = deviceOS,
@@ -78,6 +143,7 @@ class AuthViewModel @Inject constructor(
                 return@launch
             }
 
+            // Step 4: Check if user has name
             val userName = deviceLogin.user?.name
             if (userName.isNullOrBlank()) {
                 _uiState.value = _uiState.value.copy(
@@ -89,10 +155,13 @@ class AuthViewModel @Inject constructor(
                     isLoading = false,
                     requireName = false,
                 )
+
                 onSuccess()
             }
         }
     }
+
+
 
     fun updateDeviceName(
         name: String,

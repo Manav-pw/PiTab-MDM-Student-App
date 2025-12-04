@@ -144,7 +144,7 @@ class AuthRepository @Inject constructor(
         authPreferences.clear()
     }
 
-    private fun saveToken(dto: GetTokenDto) {
+    public fun saveToken(dto: GetTokenDto) {
         authPreferences.saveToken(
             accessToken = dto.access_token,
             refreshToken = dto.refresh_token,

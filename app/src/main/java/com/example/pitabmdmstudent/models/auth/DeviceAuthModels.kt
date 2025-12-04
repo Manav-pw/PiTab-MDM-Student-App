@@ -3,7 +3,7 @@ package com.example.pitabmdmstudent.models.auth
 data class DeviceLoginRequest(
     val phone: Long,
     val deviceOS: String,
-    val machineId: String,
+    val machineId: String
 )
 
 data class DeviceUserInfo(
