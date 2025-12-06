@@ -1,5 +1,6 @@
 package com.example.pitabmdmstudent.data.remote.repository
 
+import android.util.Log
 import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.data.auth.AuthPreferences
 import com.example.pitabmdmstudent.data.remote.api.DeviceAuthApi
@@ -113,20 +114,29 @@ class AuthRepository @Inject constructor(
             deviceOS = deviceOS,
             machineId = machineId,
         )
-        val response = deviceAuthApi.loginDevice(body)
-        return if (response.isSuccessful) {
-            val data = response.body()?.data
-            if (data != null) {
-                authPreferences.saveDeviceLogin(
-                    socketToken = data.socketToken,
-                    userId = data.userId,
-                    userName = data.user?.name,
-                )
+        try {
+            val response = deviceAuthApi.loginDevice(body)
+            Log.d("DevLogin", "responseee $response")
+            return if (response.isSuccessful) {
+                val data = response.body()?.data
+                Log.d("DevLogin","data $data")
+                if (data != null) {
+                    authPreferences.saveDeviceLogin(
+                        socketToken = data.socketToken,
+                        userId = data.userId,
+                        userName = data.user?.name,
+                    )
+                }
+                data
+            } else {
+                Log.d("DevLogin","response $response")
+                null
             }
-            data
-        } else {
-            null
+        }catch (e: Exception){
+            Log.d("DevLogin","error",e)
+            return null
         }
+
     }
 
     suspend fun updateDeviceName(

@@ -1,12 +1,14 @@
 package com.example.pitabmdmstudent.socket
 
+import com.example.pitabmdmstudent.models.HmsIncomingEvent
+
 sealed class SocketEvent {
     object Connected : SocketEvent()
     object Disconnected : SocketEvent()
     data class ScreenshotRequest(val pairingId: String) : SocketEvent()
 
-    data class HMSVideoCall(val token: String): SocketEvent()
-    data class HMSAudioCall(val token: String): SocketEvent()
-    data class HMSScreenShare(val token: String): SocketEvent()
-    data class VideoCallEnd(val ended: Boolean): SocketEvent()
+    data class HMSVideoCall(val hmsData: HmsIncomingEvent): SocketEvent()
+    data class HMSAudioCall(val hmsData: HmsIncomingEvent): SocketEvent()
+    data class HMSScreenShare(val hmsData: HmsIncomingEvent): SocketEvent()
+    data class VideoCallEnd(val hmsData: HmsIncomingEvent): SocketEvent()
 }

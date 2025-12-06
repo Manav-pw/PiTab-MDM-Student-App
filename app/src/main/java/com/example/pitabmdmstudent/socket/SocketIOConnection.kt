@@ -1,14 +1,12 @@
 package com.example.pitabmdmstudent.socket
 
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
 import android.util.Log
-import androidx.core.content.ContextCompat
 import com.example.pitabmdmstudent.BuildConfig
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
-import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
-import com.example.pitabmdmstudent.utils.ScreenshotUtil
+import com.example.pitabmdmstudent.models.HmsIncomingEvent
+import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.socket.client.IO
 import io.socket.client.Socket
@@ -68,6 +66,8 @@ class SocketIOConnection @Inject constructor(
             val event = json.optString("event")
             val messageObject = json.optJSONObject("message")
 
+            Log.d("SocketService","Event Incoming: $event");
+
             if (messageObject == null) return@Listener;
 
             val packageName = messageObject.optString("packageName")
@@ -87,10 +87,17 @@ class SocketIOConnection @Inject constructor(
                 }
 
                 DEVICE_SCREEN_SHARE_START -> {
-//                    val message = json.optJSONObject("message") ?: JSONObject()
-//                    val data = Gson().fromJson(message.toString(), HMSMessage::class.java)
+                    Log.d("HMSDebug", "DEVICE_SCREEN_SHARE_START")
+                    Log.d("HMSDebug", "event $messageObject")
+
+
+
+                    val message = json.optJSONObject("message") ?: JSONObject()
+                    val data = Gson().fromJson(message.toString(), HmsIncomingEvent::class.java)
+                    _socketEvents.tryEmit(SocketEvent.HMSScreenShare(data))
+
+
 //                    println("socket Data: $data")
-//                    Log.d("CustomSSLog", "Pass0")
 //                    val intent = Intent(
 //                        context,
 //                        Class.forName("co.penpencil.launcher.services.parentapp.LiveScreenShareService")
@@ -296,5 +303,13 @@ class SocketIOConnection @Inject constructor(
         socket?.on(event, Emitter.Listener { args ->
             callback(args) // pass the event data to the callback function
         })
+    }
+
+    fun emitHmsAccepted(callId: String?) {
+        //TODO
+    }
+
+    fun emitHmsDeclined(callId: String?) {
+        //TODO
     }
 }

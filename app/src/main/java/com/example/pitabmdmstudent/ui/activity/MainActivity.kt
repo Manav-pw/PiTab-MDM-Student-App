@@ -1,12 +1,12 @@
 package com.example.pitabmdmstudent.ui.activity
 
 import android.Manifest
-import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -18,32 +18,38 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    private val REQUIRED_PERMISSIONS = arrayOf(
-        Manifest.permission.READ_CONTACTS,
-        Manifest.permission.READ_CALL_LOG
-    )
+    private val requiredPermissions = buildList {
+        add(Manifest.permission.READ_CONTACTS)
+        add(Manifest.permission.READ_CALL_LOG)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            add(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }.toTypedArray()
+
+    // Modern permission launcher
+    private val permissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { result ->
+            val allGranted = result.values.all { it }
+
+            if (allGranted) {
+                onAllPermissionsGranted()
+            } else {
+                // User denied some permissions — optional: show UI or toast
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        requestNotificationPermission()
-        requestContactAndCallLogPermissions()
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1000)
-            }
-        }
-
-//        AppEventBus.emit(AppEventBus.DeviceEvent.ForegroundAppChanged)
+        // Ask for permissions
+        permissionLauncher.launch(requiredPermissions)
 
         setContent {
             PiTabMDMStudentTheme {
                 Surface(
-                    modifier = Modifier.Companion.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
                     NavGraph()
@@ -52,23 +58,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun requestNotificationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1000)
-            }
-        }
-    }
-
-    private fun requestContactAndCallLogPermissions() {
-        val denied = REQUIRED_PERMISSIONS.filter {
-            checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
-        }
-
-        if (denied.isNotEmpty()) {
-            requestPermissions(denied.toTypedArray(), 2000)
-        }
+    private fun onAllPermissionsGranted() {
+        // HERE start your socket service or call management service.
+        // Example:
+        // SocketService.start(this)
     }
 }

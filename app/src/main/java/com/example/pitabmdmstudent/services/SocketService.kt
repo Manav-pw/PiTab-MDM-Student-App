@@ -1,82 +1,65 @@
 package com.example.pitabmdmstudent.services
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
-import android.app.Service
+import android.app.*
 import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences
 import android.content.pm.ServiceInfo
+import android.media.projection.MediaProjection
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.edit
-import com.example.pitabmdmstudent.ui.activity.MainActivity
 import com.example.pitabmdmstudent.MediaProjectionHolder
-import com.example.pitabmdmstudent.ui.activity.ScreenCapturePermissionActivity
 import com.example.pitabmdmstudent.appRestriction.AppBlockManager
 import com.example.pitabmdmstudent.data.remote.repository.StudentRepository
 import com.example.pitabmdmstudent.event.AppEventBus
-import com.example.pitabmdmstudent.models.request.AppUsageStatsRequest
-import com.example.pitabmdmstudent.models.request.DeviceStateRequest
-import com.example.pitabmdmstudent.models.request.SendScreenshotRequest
-import com.example.pitabmdmstudent.models.request.VisibleApp
+import com.example.pitabmdmstudent.models.request.*
 import com.example.pitabmdmstudent.receivers.BatteryReceiver
 import com.example.pitabmdmstudent.socket.SocketEvent
 import com.example.pitabmdmstudent.socket.SocketIOConnection
+import com.example.pitabmdmstudent.ui.activity.MainActivity
+import com.example.pitabmdmstudent.ui.activity.ScreenCapturePermissionActivity
 import com.example.pitabmdmstudent.utils.AppUsageUtils
 import com.example.pitabmdmstudent.utils.AppUtils
 import com.example.pitabmdmstudent.utils.ScreenshotUtil
-import android.media.projection.MediaProjection
-import android.media.projection.MediaProjectionManager
-import com.example.pitabmdmstudent.models.request.CallLogRequest
+import com.example.pitabmdmstudent.utils.HmsUtils
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import javax.inject.Inject
 
 @AndroidEntryPoint
 class SocketService : Service() {
-    @Inject
-    lateinit var socket: SocketIOConnection
 
-    @Inject
-    lateinit var studentRepository: StudentRepository
+    @Inject lateinit var socket: SocketIOConnection
+    @Inject lateinit var studentRepository: StudentRepository
+    @Inject lateinit var usageStatsManager: UsageStatsManager
+    @Inject lateinit var sharedPrefs: SharedPreferences
 
-    @Inject
-    lateinit var usageStatsManager: UsageStatsManager
-
-    @Inject
-    lateinit var sharedPrefs: SharedPreferences
-
-    private val job = SupervisorJob()
-    private val serviceScope = CoroutineScope(Dispatchers.IO + job)
+    private val serviceJob = SupervisorJob()
+    private val serviceScope = CoroutineScope(Dispatchers.IO + serviceJob)
 
     private val todayUsageMap = mutableMapOf<String, Long>()
     private var sessionStartMs = 0L
     private var currentForegroundPackage: String? = null
 
     companion object {
-        private const val NOTIFICATION_ID = 1987
-        private const val CHANNEL_ID = "socket_channel"
+        const val NOTIFICATION_ID = 1987
+        const val CHANNEL_ID = "socket_channel"
         private const val CHANNEL_NAME = "MDM Socket Connection"
-
         private const val USAGE_PREF = "usage_stats_prefs"
         private const val KEY_LAST_SYNC = "last_sync_timestamp"
-        
+
         const val ACTION_PERMISSION_GRANTED = "ACTION_PERMISSION_GRANTED"
+        const val ACTION_HMS_ACCEPTED = "com.example.socket.ACTION_HMS_ACCEPTED"
+        const val ACTION_HMS_DECLINED = "com.example.socket.ACTION_HMS_DECLINED"
 
         fun start(context: Context) {
-            Log.d("SocketTest", "Service STARTED")
             val intent = Intent(context, SocketService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -84,7 +67,7 @@ class SocketService : Service() {
                 context.startService(intent)
             }
         }
-        
+
         fun onPermissionGranted(context: Context) {
             val intent = Intent(context, SocketService::class.java).apply {
                 action = ACTION_PERMISSION_GRANTED
@@ -105,64 +88,62 @@ class SocketService : Service() {
         super.onCreate()
 
         sharedPrefs = getSharedPreferences(USAGE_PREF, Context.MODE_PRIVATE)
-
         createNotificationChannel()
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(
-                NOTIFICATION_ID,
-                createNotification("Connecting…"),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, createNotification("Connecting…"))
-        }
 
-        socket.initializeCommunication()
+        // START FGS WITHOUT mediaProjection
+        startForegroundServiceWithNotification("Connecting…", includeMediaProjection = false)
 
+        serviceScope.launchSafely { initializeSocket() }
         getMediaProjection()
-
-//        if (MediaProjectionHolder.mediaProjection == null) {
-//            val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
-//            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-//            startActivity(intent)
-//        } else {
-//            ScreenshotUtil.setupScreenCapture(applicationContext)
-//        }
-
-
-
-        registerReceiver(
-            BatteryReceiver(),
-            IntentFilter(Intent.ACTION_BATTERY_CHANGED)
-        )
-
+        registerReceiver(BatteryReceiver(), IntentFilter(Intent.ACTION_BATTERY_CHANGED))
         AppBlockManager.initialize(applicationContext)
 
         observeSocketEvents()
         observeSystemEvents()
         startUsageStatsUploader()
-        startContactsUploader()
         startAppLimitMonitor()
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_PERMISSION_GRANTED) {
-            Log.d("SocketService", "Received ACTION_PERMISSION_GRANTED")
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // Upgrade this service to also be a mediaProjection FGS.
-                startForeground(
-                    NOTIFICATION_ID,
-                    createNotification("Screen capture ready"),
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC or
-                            ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION
-                )
-            }
-
-            setupMediaProjectionFromHolder()
+    private fun startForegroundServiceWithNotification(
+        text: String,
+        includeMediaProjection: Boolean
+    ) {
+        val notification = createNotification(text)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val type = if (includeMediaProjection)
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PROJECTION or ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            else ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            startForeground(NOTIFICATION_ID, notification, type)
+        } else {
+            startForeground(NOTIFICATION_ID, notification)
         }
+    }
 
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        intent?.action?.let { action ->
+            when (action) {
+                ACTION_PERMISSION_GRANTED -> {
+                    // Upgrade FGS to include MediaProjection now that permission is granted
+                    startForegroundServiceWithNotification("Screen capture ready", includeMediaProjection = true)
+                    setupMediaProjectionFromHolder()
+                }
+                ACTION_HMS_ACCEPTED -> handleHmsAction(intent.getStringExtra("callId"), accepted = true)
+                ACTION_HMS_DECLINED -> handleHmsAction(intent.getStringExtra("callId"), accepted = false)
+            }
+        }
         return START_STICKY
+    }
+
+    private fun handleHmsAction(callId: String?, accepted: Boolean) {
+        if (callId == null) return
+        serviceScope.launchSafely {
+            try {
+                if (accepted) socket.emitHmsAccepted(callId)
+                else socket.emitHmsDeclined(callId)
+            } catch (e: Exception) {
+                Log.e("SocketService", "HMS action failed", e)
+            }
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -170,153 +151,114 @@ class SocketService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         socket.disconnect()
-        job.cancel()
+        serviceJob.cancel()
     }
 
     private fun getMediaProjection() {
         if (MediaProjectionHolder.mediaProjection == null) {
-            Log.d("MediaProjection","null")
             val intent = Intent(this, ScreenCapturePermissionActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             startActivity(intent)
         } else {
-            Log.d("MediaProjection","not null")
             ScreenshotUtil.setupScreenCapture(applicationContext)
         }
     }
 
     private fun setupMediaProjectionFromHolder() {
-        // If we already have a MediaProjection, just ensure screenshot
-        // capture is configured.
         MediaProjectionHolder.mediaProjection?.let {
-            Log.d("MediaProjection", "MediaProjection already available")
             ScreenshotUtil.setupScreenCapture(applicationContext)
             return
         }
 
-        val data = MediaProjectionHolder.data
+        val data = MediaProjectionHolder.data ?: return
         val resultCode = MediaProjectionHolder.resultCode
 
-        if (data == null) {
-            Log.e("MediaProjection", "No data in MediaProjectionHolder; cannot set up projection")
-            return
-        }
-
-        val projectionManager =
-            getSystemService(MediaProjectionManager::class.java) ?: run {
-                Log.e("MediaProjection", "Failed to obtain MediaProjectionManager")
-                return
-            }
-
+        val projectionManager = getSystemService(MediaProjectionManager::class.java) ?: return
         val mp: MediaProjection? = try {
             projectionManager.getMediaProjection(resultCode, data)
         } catch (e: SecurityException) {
-            Log.e("MediaProjection", "SecurityException while getting MediaProjection", e)
+            Log.e("MediaProjection", "Failed to get projection", e)
             null
         }
-
         MediaProjectionHolder.mediaProjection = mp
 
-        if (mp != null) {
-            Log.d("MediaProjection", "MediaProjection obtained in service: $mp")
-
+        mp?.let {
             if (!MediaProjectionHolder.callbackRegistered) {
-                mp.registerCallback(object : MediaProjection.Callback() {
+                it.registerCallback(object : MediaProjection.Callback() {
                     override fun onStop() {
-                        Log.d("ScreenPerm", "MediaProjection stopped by system")
                         MediaProjectionHolder.reset()
                     }
                 }, Handler(Looper.getMainLooper()))
-
                 MediaProjectionHolder.callbackRegistered = true
             }
-
             ScreenshotUtil.setupScreenCapture(applicationContext)
-        } else {
-            Log.e("MediaProjection", "Failed to obtain MediaProjection in service")
         }
     }
 
-    // ---------------------------------------
-    // SOCKET LISTENERS
-    // ---------------------------------------
+    // -----------------------
+    // SOCKET INITIALIZATION
+    // -----------------------
+    private suspend fun initializeSocket() {
+        try {
+            socket.initializeCommunication()
+        } catch (e: Exception) {
+            Log.e("SocketService", "Socket initialization failed", e)
+        }
+    }
+
     private fun observeSocketEvents() {
-        serviceScope.launch {
+        serviceScope.launchSafely {
             socket.socketEvents.collect { event ->
                 Log.d("SocketService", "Socket Event: $event")
                 when (event) {
-
                     is SocketEvent.Connected -> {
                         updateNotification("Connected")
-
-//                        getMediaProjection()
-
-                        val apps = AppUtils.getAllInstalledApps(applicationContext)
-                        studentRepository.uploadInstalledApps(apps)
+                        studentRepository.uploadInstalledApps(AppUtils.getAllInstalledApps(applicationContext))
                         uploadDeviceState()
                     }
-
-                    is SocketEvent.Disconnected -> {
-                        updateNotification("Disconnected")
-                    }
-
-                    is SocketEvent.ScreenshotRequest -> {
-                        Log.d("ScreenshotTest", "Received screenshot request")
-                        if (MediaProjectionHolder.isReady()) {
-                            ScreenshotUtil.setupScreenCapture(applicationContext)
+                    is SocketEvent.Disconnected -> updateNotification("Disconnected")
+                    is SocketEvent.ScreenshotRequest -> handleScreenshot(event.pairingId)
+                    is SocketEvent.HMSScreenShare -> {
+                        serviceScope.launchSafely {
+                            HmsUtils.showIncomingCallNotification(applicationContext, event.hmsData, "screen_share")
                         }
-
-                        handleScreenshot(event.pairingId)
                     }
-
-                    is SocketEvent.HMSAudioCall -> TODO()
-                    is SocketEvent.HMSScreenShare -> TODO()
-                    is SocketEvent.HMSVideoCall -> TODO()
-                    is SocketEvent.VideoCallEnd -> TODO()
-
+                    is SocketEvent.HMSVideoCall -> {
+                        serviceScope.launchSafely {
+                            HmsUtils.showIncomingCallNotification(applicationContext, event.hmsData, "video_call")
+                        }
+                    }
+                    is SocketEvent.HMSAudioCall -> {
+                        serviceScope.launchSafely {
+                            HmsUtils.showIncomingCallNotification(applicationContext, event.hmsData, "audio_call")
+                        }
+                    }
+                    else -> {}
                 }
             }
         }
     }
 
     private fun handleScreenshot(pairingId: String) {
-        serviceScope.launch {
-            try {
-                val base64 = ScreenshotUtil.takeScreenshot(applicationContext)
-
-                if (base64 == null) {
-                    Log.e("Screenshot", "Failed to capture screen")
-                    return@launch
-                }
-
-                val request = SendScreenshotRequest(
-                    screenshotBase64 = base64,
-                    pairingId = pairingId
-                )
-
-                val success = studentRepository.sendScreenshot(
-                    pairingId = pairingId,
-                    sendScreenshotRequest = request
-                )
-
-                Log.d("ScreenshotTest", "API success = $success")
-
-            } catch (e: Exception) {
-                Log.e("Screenshot", "Error while sending screenshot", e)
+        serviceScope.launchSafely {
+            val base64 = ScreenshotUtil.takeScreenshot(applicationContext) ?: run {
+                Log.e("Screenshot", "Failed to capture screen")
+                return@launchSafely
             }
+            val request = SendScreenshotRequest(pairingId = pairingId, screenshotBase64 = base64)
+            val success = studentRepository.sendScreenshot(pairingId, request)
+            Log.d("ScreenshotTest", "API success = $success")
         }
     }
 
-    // ---------------------------------------
-    // NOTIFICATION
-    // ---------------------------------------
+    // -----------------------
+    // NOTIFICATIONS
+    // -----------------------
     private fun createNotification(text: String): Notification {
         val pendingIntent = PendingIntent.getActivity(
-            this, 0,
-            Intent(this, MainActivity::class.java),
+            this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE
         )
-
         return Notification.Builder(this, CHANNEL_ID)
             .setContentTitle("MDM Socket Service")
             .setContentText(text)
@@ -333,36 +275,30 @@ class SocketService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                CHANNEL_NAME,
-                NotificationManager.IMPORTANCE_LOW
-            )
-
+            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW)
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
         }
     }
 
+    // -----------------------
+    // SYSTEM EVENTS
+    // -----------------------
     private fun observeSystemEvents() {
-        serviceScope.launch {
+        serviceScope.launchSafely {
             AppEventBus.events.collect { event ->
                 when (event) {
                     is AppEventBus.DeviceEvent.ForegroundAppChanged -> {
                         val now = System.currentTimeMillis()
-                        currentForegroundPackage?.let { previousPkg ->
-                            todayUsageMap[previousPkg] =
-                                (todayUsageMap[previousPkg] ?: 0) + (now - sessionStartMs)
-                            Log.d("LimitTest", "usage map updated: $todayUsageMap")
+                        currentForegroundPackage?.let { previous ->
+                            todayUsageMap[previous] = (todayUsageMap[previous] ?: 0L) + (now - sessionStartMs)
                         }
                         currentForegroundPackage = event.packageName
                         sessionStartMs = now
                         currentForegroundPackage?.let { AppBlockManager.checkAndEnforceBlocking(it) }
                         uploadDeviceState()
                     }
-
-                    is AppEventBus.DeviceEvent.ChargingStateChanged -> uploadDeviceState()
-                    // TODO: IMPLEMENT APPSTARTED IF NEEDED
+                    is AppEventBus.DeviceEvent.ChargingStateChanged,
                     is AppEventBus.DeviceEvent.AppStarted -> uploadDeviceState()
                     else -> {}
                 }
@@ -374,108 +310,61 @@ class SocketService : Service() {
         val visibleApps = getVisibleApps(applicationContext)
         val battery = AppUtils.getBatteryLevel(applicationContext)
         val charging = AppUtils.isCharging(applicationContext)
-
-        val request = DeviceStateRequest(
-            visibleApps = visibleApps,
-            batteryReading = battery.toString(),
-            batteryCharging = charging
-        )
-
-        studentRepository.updateDeviceState(request)
+        val request = DeviceStateRequest(visibleApps, battery.toString(), charging)
+        try {
+            studentRepository.updateDeviceState(request)
+        } catch (e: Exception) {
+            Log.e("SocketService", "Device state upload failed", e)
+        }
     }
 
     fun getVisibleApps(context: Context): List<VisibleApp> {
         val service = MyAccessibilityService.instance ?: return emptyList()
-
-        val pkg = service.rootInActiveWindow?.packageName?.toString()
-            ?: return emptyList()
+        val pkg = service.rootInActiveWindow?.packageName?.toString() ?: return emptyList()
         val label = AppUtils.getAppName(context, pkg)
-
-        return listOf(
-            VisibleApp(
-                packageName = pkg,
-                applicationName = label
-            )
-        )
+        return listOf(VisibleApp(pkg, label))
     }
 
+    // -----------------------
+    // USAGE STATS
+    // -----------------------
     private fun startUsageStatsUploader() {
-        serviceScope.launch {
-            while (true) {
-                try {
-                    uploadIncrementalAppUsage()
-                } catch (e: Exception) {
-                    Log.e("UsageUploader", "Error uploading usage", e)
-                }
-//                delay(1 * 60 * 1000) // every minute
-                delay(60 * 1000)
+        serviceScope.launchSafely {
+            while (isActive) {
+                uploadIncrementalAppUsage()
+                delay(60_000)
             }
         }
     }
 
     private suspend fun uploadIncrementalAppUsage() {
         val currentTime = System.currentTimeMillis()
-        val lastSyncTime = sharedPrefs.getLong(KEY_LAST_SYNC, AppUsageUtils.getTodayStartTime())
-
-        Log.d("UsageUploader", "Syncing from $lastSyncTime to $currentTime")
-
-        // Get incremental usage since last sync
-        val incrementalUsage = AppUsageUtils.getIncrementalAppUsage(
-            applicationContext,
-            usageStatsManager,
-            applicationContext.packageName,
-            lastSyncTime,
-            currentTime
+        val lastSync = sharedPrefs.getLong(KEY_LAST_SYNC, AppUsageUtils.getTodayStartTime())
+        val usage = AppUsageUtils.getIncrementalAppUsage(
+            applicationContext, usageStatsManager, packageName, lastSync, currentTime
         )
-
-        if (incrementalUsage.isEmpty()) {
-            Log.d("UsageUploader", "No new usage data since last sync")
-            // Still update sync time even if no data
+        if (usage.isEmpty()) {
             sharedPrefs.edit { putLong(KEY_LAST_SYNC, currentTime) }
             return
         }
-
-        Log.d("UsageUploader", "Incremental usage: $incrementalUsage")
-
-        val request = AppUsageStatsRequest(incrementalUsage)
-
-        val success = studentRepository.postAppUsageStats(request)
-
-        if (success) {
-            sharedPrefs.edit { putLong(KEY_LAST_SYNC, currentTime) }
-            Log.d("UsageUploader", "Successfully uploaded ${incrementalUsage.size} app records")
-        } else {
-            Log.e("UsageUploader", "Failed to upload usage stats - will retry next sync")
-        }
+        val request = AppUsageStatsRequest(usage)
+        val success = try { studentRepository.postAppUsageStats(request) } catch (e: Exception) { false }
+        if (success) sharedPrefs.edit { putLong(KEY_LAST_SYNC, currentTime) }
     }
 
     private fun startAppLimitMonitor() {
-        serviceScope.launch {
-            while (true) {
-                val pkg = currentForegroundPackage
-                Log.d("LimitTest", "CurrPkg in Monitor: $pkg")
-                if (pkg != null) {
+        serviceScope.launchSafely {
+            while (isActive) {
+                currentForegroundPackage?.let { pkg ->
                     val now = System.currentTimeMillis()
-
-                    todayUsageMap[pkg] =
-                        (todayUsageMap[pkg] ?: 0L) + (now - sessionStartMs)
-
+                    todayUsageMap[pkg] = (todayUsageMap[pkg] ?: 0L) + (now - sessionStartMs)
                     sessionStartMs = now
 
-                    Log.d("LimitTest", "Checking limit")
                     val usedSeconds = (todayUsageMap[pkg] ?: 0L) / 1000
-                    val rule = AppBlockManager.getRule(pkg)
-                    val limitSeconds = rule?.usageLimitSeconds ?: 0
-
-                    Log.d("LimitTest", "usageSeconds: $usedSeconds, limitSeconds: $limitSeconds")
-
+                    val limitSeconds = AppBlockManager.getRule(pkg)?.usageLimitSeconds ?: 0
                     if (limitSeconds > 0 && usedSeconds >= limitSeconds) {
-                        Log.d("LimitTest", "$pkg exceeded limit $usedSeconds / $limitSeconds")
-
                         MyAccessibilityService.instance?.showBlockScreen(
-                            pkg,
-                            "App blocked",
-                            "You have reached today's time limit for this app."
+                            pkg, "App blocked", "You have reached today's time limit for this app."
                         )
                     }
                 }
@@ -484,51 +373,15 @@ class SocketService : Service() {
         }
     }
 
-//    private suspend fun uploadContactsData() {
-//        val contacts = ContactsUtils.getAllContacts(applicationContext)
-//        if (contacts.isEmpty()) return
-//
-//        Log.d("Uploader", "Uploading ${contacts.size} contacts")
-//
-//        val request = ContactsRequest(contacts)
-//        val success = studentRepository.postContacts(request)
-//
-//        if (success) {
-//            Log.d("Uploader", "Contacts uploaded")
-//        } else {
-//            Log.e("Uploader", "Failed to upload contacts")
-//        }
-//    }
-
-    private suspend fun uploadCallLogsData() {
-        val logs = ContactsUtils.getCallLogs(applicationContext)
-        if (logs.isEmpty()) return
-
-        Log.d("Uploader", "Uploading ${logs.size} call logs")
-
-        val request = CallLogRequest(callDetails = logs)
-        val success = studentRepository.postCallLogs(request)
-
-        if (success) {
-            Log.d("Uploader", "Call logs uploaded")
-        } else {
-            Log.e("Uploader", "Failed to upload call logs")
-        }
-    }
-
-    private fun startContactsUploader() {
-        serviceScope.launch {
-            while (true) {
-                try {
-//                    uploadContactsData()
-                    uploadCallLogsData()
-
-                } catch (e: Exception) {
-                    Log.e("Uploader", "Error uploading data", e)
-                }
-
-                delay(1 * 20 * 1000) // Every 5 minutes
+    // -----------------------
+    // SAFE LAUNCH UTILITY
+    // -----------------------
+    private fun CoroutineScope.launchSafely(block: suspend CoroutineScope.() -> Unit) =
+        this.launch {
+            try {
+                block()
+            } catch (e: Exception) {
+                Log.e("SocketService", "Coroutine crash", e)
             }
         }
-    }
 }

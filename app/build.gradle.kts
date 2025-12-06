@@ -81,6 +81,10 @@ dependencies {
 
     implementation("io.socket:socket.io-client:2.1.2")
 
+    implementation("com.github.100mslive:android-sdk:2.9.78")
+    implementation("live.100ms:android-sdk:2.9.78")
+    implementation("live.100ms:video-view:2.9.78")
+
     implementation("androidx.navigation:navigation-compose:2.9.6")
     implementation("androidx.constraintlayout:constraintlayout-compose:1.1.1")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")

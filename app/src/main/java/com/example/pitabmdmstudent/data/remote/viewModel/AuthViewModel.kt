@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pitabmdmstudent.data.remote.repository.AuthRepository
+import com.example.pitabmdmstudent.models.auth.DeviceLoginRes
 import com.example.pitabmdmstudent.models.auth.GetTokenDto
 import com.example.pitabmdmstudent.models.auth.UserData
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +38,7 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun runDevBypassLogic(onSuccess: () -> Unit) {
+        Log.d("DevLogin","1")
         val devToken = GetTokenDto(
             access_token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjUzODMyMzMuMTUsImRhdGEiOnsiX2lkIjoiNjkxNWNmYzU1MDc4MTcwMTZjN2JkYTU2IiwidXNlcm5hbWUiOiI5NTI4OTAzNDMxIiwiZmlyc3ROYW1lIjoiIiwibGFzdE5hbWUiOiIiLCJvcmdhbml6YXRpb24iOnsiX2lkIjoiNjU5M2I0YTllNjc4MjgwMDE4NzQyYzRjIiwid2Vic2l0ZSI6ImxlYXJub3MubGl2ZSIsIm5hbWUiOiJsZWFybi1vcyJ9LCJyb2xlcyI6WyI1YjI3YmQ5NjU4NDJmOTUwYTc3OGM2ZWYiXSwiY291bnRyeUdyb3VwIjoiSU4iLCJvbmVSb2xlcyI6W10sInR5cGUiOiJVU0VSIn0sImlhdCI6MTc2NDc3ODQzM30.5FaN7zTBbxhZUHZrwWs8LZv90VI-BbF0MWiZpWx7FmY",
             refresh_token="8e5a2547b0aa818a9f150328950d72c33630edf9c53163d4cd86bae6b3ee948d",
@@ -47,17 +49,31 @@ class AuthViewModel @Inject constructor(
                 firstName="Param"
             )
         )
+        Log.d("DevLogin","2")
 
         viewModelScope.launch {
+
+            Log.d("DevLogin","3")
             authRepository.saveToken(devToken)
 
-            val deviceLogin = authRepository.loginDevice(
-                phoneNumber = "9528903431",
-                deviceOS = "android",
-                machineId = "9528903431",
-            )
+            Log.d("DevLogin","4")
+
+            var deviceLogin: DeviceLoginRes? = null
+
+            try{
+                deviceLogin = authRepository.loginDevice(
+                    phoneNumber = "9528903431",
+                    deviceOS = "android",
+                    machineId = "9528903431",
+                )
+            }catch (e: Exception){
+                Log.d("DevLogin","4.1 $e")
+            }
+
+            Log.d("DevLogin","5 $deviceLogin")
 
             if (deviceLogin == null) {
+                Log.d("DevLogin","6 $deviceLogin")
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     errorMessage = "Device login failed. Please try again.",

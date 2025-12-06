@@ -21,12 +21,14 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import live.hms.video.sdk.HMSSDK
 import javax.inject.Named
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
+
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -148,6 +150,14 @@ object AppModule {
         retrofit: Retrofit,
     ): DeviceAuthApi {
         return retrofit.create(DeviceAuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideHMSSDK(
+        @ApplicationContext context: Context
+    ): HMSSDK{
+        return HMSSDK.Builder(context).build()
     }
 
 }
